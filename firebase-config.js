@@ -10,4 +10,3 @@ window.firebaseConfig = {
   measurementId: "G-GJ7CH5WQ2J"
 };
 
-  };
