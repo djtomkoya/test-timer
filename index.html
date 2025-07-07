@@ -221,6 +221,12 @@ function updateClockTime() {
        <input type="number" id="s${i}" min="0" max="59" value="0"> s <br/>
        <button onclick="startTimer('${name}', ${i})">スタート</button>
        <button onclick="resetTimer('${name}', ${i})">リセット</button>
+       
+
+       <input type="number" id="adjust${i}" value="15" style="width: 80px;"> 秒
+<button onclick="adjustTime('${name}', ${i}, true)">＋</button>
+<button onclick="adjustTime('${name}', ${i}, false)">−</button>
+
      `;
      container.appendChild(box);
 
@@ -278,6 +284,23 @@ function updateClockTime() {
      const timerRef = ref(db, "sharedTimers/" + name);
      set(timerRef, { time: totalSeconds, running: false });
    };
+
+   window.adjustTime = function (name, i, isAdd) {
+  const adjustInput = document.getElementById(`adjust${i}`);
+  const adjustSeconds = parseInt(adjustInput.value) || 0;
+  const timerRef = ref(db, "sharedTimers/" + name);
+
+  onValue(timerRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
+
+    let newTime = isAdd ? data.time + adjustSeconds : data.time - adjustSeconds;
+    if (newTime < 0) newTime = 0;
+
+    set(timerRef, { time: newTime, running: true });
+  }, { onlyOnce: true });  // 1回だけ取得して更新
+};
+
 
    window.convertQuick = function (i) {
      const val = document.getElementById("quick" + i).value.trim();
