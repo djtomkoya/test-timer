@@ -101,6 +101,36 @@ button:hover {
   opacity: 0.8;
 }
 
+.adjust-buttons {
+  font-size: 40px;
+  padding: 10px 20px;
+  margin: 5px;
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.adjust-plus {
+  background-color: #f44336;  /* 赤 */
+  color: white;
+}
+
+.adjust-minus {
+  background-color: #4CAF50;  /* 緑 */
+  color: white;
+}
+
+.adjust-plus:hover {
+  background-color: #d32f2f;
+}
+
+.adjust-minus:hover {
+  background-color: #45a049;
+}
+
+
 #scrollTopBtn:hover, #scrollBottomBtn:hover {
   background-color: #4e5a46;
 }
@@ -223,9 +253,10 @@ function updateClockTime() {
        <button onclick="resetTimer('${name}', ${i})">リセット</button>
        
 
-       <input type="number" id="adjust${i}" value="15" style="width: 80px;"> 秒
-<button onclick="adjustTime('${name}', ${i}, true)">＋</button>
-<button onclick="adjustTime('${name}', ${i}, false)">−</button>
+       <input type="number" id="adjust${i}" value="15" style="width: 80px; font-size: 24px;"> 秒
+      <button class="adjust-buttons adjust-plus" onclick="adjustTime('${name}', ${i}, true)">＋</button>
+<button class="adjust-buttons adjust-minus" onclick="adjustTime('${name}', ${i}, false)">−</button>
+
 
      `;
      container.appendChild(box);
