@@ -248,32 +248,40 @@ function updateClockTime() {
       return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
 
+    window.startTimer = function (name, i) {
+  const h = parseInt(document.getElementById("h" + i).value) || 0;
+  const m = parseInt(document.getElementById("m" + i).value) || 0;
+  const s = parseInt(document.getElementById("s" + i).value) || 0;
+  const totalSeconds = h * 3600 + m * 60 + s;
 
+  const timerRef = ref(db, "sharedTimers/" + name);
+  clearInterval(intervals[name]); // 古いインターバルを停止
 
-   window.startTimer = function (name, i) {
-     const h = parseInt(document.getElementById("h" + i).value) || 0;
-     const m = parseInt(document.getElementById("m" + i).value) || 0;
-     const s = parseInt(document.getElementById("s" + i).value) || 0;
-     let countdown = h * 3600 + m * 60 + s;
+  // 初期値をFirebaseに設定
+  set(timerRef, { time: totalSeconds, running: true });
 
-     const timerRef = ref(db, "sharedTimers/" + name);
-     clearInterval(intervals[name]);
+  // 1秒ごとに、Firebaseの最新値を取得して1減らして保存
+  intervals[name] = setInterval(() => {
+    onValue(timerRef, (snapshot) => {
+      const data = snapshot.val();
+      if (!data || !data.running) {
+        clearInterval(intervals[name]);
+        return;
+      }
 
-     document.getElementById("display" + i).innerText = formatTime(countdown);
+      let newTime = data.time - 1;
+      if (newTime < 0) {
+        clearInterval(intervals[name]);
+        newTime = 0;
+      }
 
-     set(timerRef, { time: countdown, running: true });
-
-     intervals[name] = setInterval(() => {
-       countdown--;
+      set(timerRef, { time: newTime, running: true });
+    }, { onlyOnce: true });  // 毎秒1回だけ値を読む
+  }, 1000);
+};
 
        
-       if (countdown < 0) {
-         clearInterval(intervals[name]);
-         return;
-       }
-       set(timerRef, { time: countdown, running: true });
-     }, 1000);
-   };
+       
 
    window.resetTimer = function (name, i) {
      clearInterval(intervals[name]);
