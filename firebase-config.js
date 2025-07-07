@@ -1,4 +1,5 @@
- window.firebaseConfig = {
+
+window.firebaseConfig = {
     apiKey: "AIzaSyAVTSM4cqKjvNqpJXV1qadRwTSQiAJHSzM",
     authDomain: "test-timer-ad669.firebaseapp.com",
     projectId: "test-timer-ad669",
