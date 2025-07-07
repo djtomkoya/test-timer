@@ -125,8 +125,6 @@ button:hover {
  <button id="scrollBottomBtn">↓ Recap</button>
  
 
-
-
   <script type="module">
   // 必要なSDKから必要な機能をインポートする
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
@@ -153,7 +151,7 @@ const firebaseConfig = {
   const db = getDatabase(app);
 
   let timeOffset = 0;
- 　const intervals = {};
+  const intervals = {};
 
    // ❶ サーバーとの時刻差分を取得
 function syncServerTimeOffset() {
