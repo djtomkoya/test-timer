@@ -118,7 +118,7 @@ button:hover {
 }
 
 .adjust-minus {
-  background-color: #35f33c;  /* 緑 */
+  background-color: #7de155;  /* 緑 */
   color: white;
 }
 
@@ -376,36 +376,38 @@ function startDisplayLoop(name, i, timerRef) {
   const adjustSeconds = parseInt(adjustInput.value) || 0;
   const timerRef = ref(db, "sharedTimers/" + name);
 
-  get(timerRef).then((snapshot)=> {
+  get(timerRef).then((snapshot) => {
     const data = snapshot.val();
     if (!data) return;
 
-     let duration = data.duration || 0;
-    let startTime = data.startTime || (Date.now() + timeOffset);
-    let running = data.running;
+    let duration = data.duration || 0;
+    const running = data.running;
+    const startTime = data.startTime;
 
-    if (running) {
-      const remaining = getRemainingTime(startTime, duration);
-      const newRemaining = isAdd ? remaining + adjustSeconds : remaining - adjustSeconds;
-      duration = newRemaining;
-      startTime = Date.now() + timeOffset; // 今を再スタート時間にする
-    } else {
+    if (!startTime || !running) {
+      // 停止中なら単純にdurationだけ加減
       duration = isAdd ? duration + adjustSeconds : duration - adjustSeconds;
+    } else {
+      // 動作中：残り時間に加算したdurationを再構成（startTimeは触らない）
+      const now = Date.now() + timeOffset;
+      const elapsed = Math.floor((now - startTime) / 1000);
+      const remaining = duration - elapsed;
+      const newRemaining = isAdd ? remaining + adjustSeconds : remaining - adjustSeconds;
+
+      duration = elapsed + Math.max(0, newRemaining); // 新しいdurationを再構成
     }
 
     if (duration < 0) duration = 0;
 
     set(timerRef, {
-      startTime: running ? startTime : null,
+      startTime: startTime || null, // ←running中ならそのまま
       duration: duration,
       running: running && duration > 0,
       owner: data.owner
     });
-
-     const displayTime = formatTime(duration);
-    document.getElementById("display" + i).innerText = displayTime;
   });
 };
+
 
 
    window.convertQuick = function (i) {
