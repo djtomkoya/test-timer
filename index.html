@@ -267,7 +267,7 @@ function updateClockTime() {
 
          document.getElementById("display" + i).innerText = formatTime(data.time);
          // 自分がオーナーか判定してボタン制御
-    const isOwner = data.owner === deviceId;
+    const isOwner = !data.owner || data.owner === deviceId;
     const box = container.children[i];
     box.querySelector("button:nth-of-type(1)").disabled = !isOwner; // スタート
     box.querySelector("button:nth-of-type(2)").disabled = !isOwner; // リセット
@@ -318,7 +318,7 @@ function updateClockTime() {
       }
 
        // ownerを上書きしないよう、ここではownerを保持
-       set(timerRef, { time: newTime, running: true, owner: data.owner });
+      set(timerRef, { time: newTime, running: true, owner: data.owner });
     }, { onlyOnce: true });  // 毎秒1回だけ値を読む
   }, 1000);
 };
@@ -333,8 +333,7 @@ function updateClockTime() {
      const s = parseInt(document.getElementById("s" + i).value) || 0;
      const totalSeconds = h * 3600 + m * 60 + s;
      const timerRef = ref(db, "sharedTimers/" + name);
-    set(timerRef, { time: totalSeconds, running: false, owner: deviceId });
-
+     set(timerRef, { time: totalSeconds, running: false });
    };
 
    window.adjustTime = function (name, i, isAdd) {
@@ -348,7 +347,7 @@ function updateClockTime() {
 
     let newTime = isAdd ? data.time + adjustSeconds : data.time - adjustSeconds;
     if (newTime < 0) newTime = 0;
-    //オーナーだけは使える
+    //
     set(timerRef, { time: newTime, running: true, owner: deviceId });
 
   }, { onlyOnce: true });  // 1回だけ取得して更新
