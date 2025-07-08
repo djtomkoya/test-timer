@@ -264,8 +264,9 @@ function updateClockTime() {
   onValue(timerRef, (snapshot) => {
     const data = snapshot.val();
     if (!data) return;
+    
+    startDisplayLoop(name, i, timerRef);
 
-         document.getElementById("display" + i).innerText = formatTime(data.time);
          // 自分がオーナーか判定してボタン制御
     const isOwner = !data.owner || data.owner === deviceId;
     const box = container.children[i];
@@ -286,8 +287,45 @@ function updateClockTime() {
       const s = seconds % 60;
       return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
+  
+ function startDisplayLoop(name, i, timerRef) {
+  function update() {
+    onValue(timerRef, (snapshot) => {
+      const data = snapshot.val();
+      if (!data || !data.endTime || !data.running) {
+        document.getElementById("display" + i).innerText = formatTime(0);
+        return;
+      }
 
-    window.startTimer = function (name, i) {
+      const now = Date.now() + timeOffset;
+      let remaining = Math.floor((data.endTime - now) / 1000);
+
+      if (remaining <= 0) {
+        remaining = 0;
+
+        // タイマー停止 & オーナー解除（1回だけ実行）
+        if (data.running) {
+          set(timerRef, {
+            time: 0,
+            running: false,
+            endTime: null,
+            owner: null
+          });
+        }
+      }
+
+      document.getElementById("display" + i).innerText = formatTime(remaining);
+    }, { onlyOnce: true });
+
+    requestAnimationFrame(update);
+  }
+
+  update(); // 最初の実行
+}
+
+
+
+  window.startTimer = function (name, i) {
   const h = parseInt(document.getElementById("h" + i).value) || 0;
   const m = parseInt(document.getElementById("m" + i).value) || 0;
   const s = parseInt(document.getElementById("s" + i).value) || 0;
@@ -298,37 +336,14 @@ function updateClockTime() {
   const timerRef = ref(db, "sharedTimers/" + name);
   clearInterval(intervals[name]); // 古いインターバルを停止
 
-  set(timerRef, { time: totalSeconds, running: true, owner: deviceId });
+  const now = Date.now() + timeOffset;
+  const endTime = now + totalSeconds * 1000;
 
+  set(timerRef, { time: totalSeconds, endTime: endTime, running: true, owner: deviceId });
 
-  
-  // 1秒ごとに、Firebaseの最新値を取得して1減らして保存
-  intervals[name] = setInterval(() => {
-    onValue(timerRef, (snapshot) => {
-      const data = snapshot.val();
-      if (!data || !data.running) {
-        clearInterval(intervals[name]);
-        return;
-      }
+  startDisplayLoop(name, i, timerRef);
 
-      let newTime = data.time - 1;
-      if (newTime < 0) {
-        clearInterval(intervals[name]);
-        newTime = 0;
-      }
-
-      set(timerRef, {
-  time: newTime,
-  running: newTime > 0,
-  owner: newTime === 0 ? null : data.owner  // 0秒になったらownerを消す
-});
-
-    }, { onlyOnce: true });  // 毎秒1回だけ値を読む
-  }, 1000);
-};
-
-       
-       
+   
 
    window.resetTimer = function (name, i) {
      clearInterval(intervals[name]);
@@ -336,9 +351,38 @@ function updateClockTime() {
      const m = parseInt(document.getElementById("m" + i).value) || 0;
      const s = parseInt(document.getElementById("s" + i).value) || 0;
      const totalSeconds = h * 3600 + m * 60 + s;
-     const timerRef = ref(db, "sharedTimers/" + name);
-     set(timerRef, { time: totalSeconds, running: false });
-   };
+     // タイマー停止 & endTime 無効化
+  const timerRef = ref(db, "sharedTimers/" + name);
+  set(timerRef, { time: 0, running: false, endTime: null });
+  // 表示ループ再開（0を表示させるため）
+  startDisplayLoop(name, i, timerRef);
+};
+
+function startDisplayLoop(name, i, timerRef) {
+  // すでに動いていれば一度止める
+  clearInterval(intervals["disp_" + name]);
+
+  intervals["disp_" + name] = setInterval(() => {
+    onValue(timerRef, (snapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+
+      let displayTime;
+      if (data.running && data.endTime) {
+        const now = Date.now() + timeOffset;
+        let remaining = Math.max(0, Math.floor((data.endTime - now) / 1000));
+        displayTime = formatTime(remaining);
+      } else {
+        displayTime = formatTime(data.time);
+      }
+
+      document.getElementById("display" + i).innerText = displayTime;
+
+    }, { onlyOnce: true });
+  }, 500); // 表示更新は0.5秒おきくらいが自然でおすすめ
+}
+
+
 
    window.adjustTime = function (name, i, isAdd) {
   const adjustInput = document.getElementById(`adjust${i}`);
@@ -349,10 +393,21 @@ function updateClockTime() {
     const data = snapshot.val();
     if (!data) return;
 
+    // 時刻差付き現在時刻
+    const now = Date.now() + timeOffset;
+
     let newTime = isAdd ? data.time + adjustSeconds : data.time - adjustSeconds;
     if (newTime < 0) newTime = 0;
+
+    // 新しい endTime を補正（running中だけ）
+    let newEndTime = null;
+    if (data.running && data.endTime) {
+      const timeLeft = Math.max(0, Math.floor((data.endTime - now) / 1000));
+      const adjustedTimeLeft = isAdd ? timeLeft + adjustSeconds : timeLeft - adjustSeconds;
+      newEndTime = now + Math.max(0, adjustedTimeLeft) * 1000;
+    }
     //
-    set(timerRef, { time: newTime, running: true, owner: deviceId });
+    set(timerRef, { time: newTime, endTime: newEndTime, running: true, owner: deviceId });
 
   }, { onlyOnce: true });  // 1回だけ取得して更新
 };
