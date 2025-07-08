@@ -384,18 +384,8 @@ function startDisplayLoop(name, i, timerRef) {
     const running = data.running;
     const startTime = data.startTime;
 
-    let newDuration;
-
-    if (!startTime || !running) {
-      newDuration = isAdd ? duration + adjustSeconds : duration - adjustSeconds;
-    } else {
-      const now = Date.now() + timeOffset;
-      const elapsed = Math.floor((now - startTime) / 1000);
-      const remaining = duration - elapsed;
-      const newRemaining = isAdd ? remaining + adjustSeconds : remaining - adjustSeconds;
-      newDuration = elapsed + Math.max(0, newRemaining);
-    }
-
+    // durationだけ加減、startTimeは維持
+    let newDuration = isAdd ? duration + adjustSeconds : duration - adjustSeconds;
     if (newDuration < 0) newDuration = 0;
 
     // Firebase更新
@@ -406,19 +396,21 @@ function startDisplayLoop(name, i, timerRef) {
       owner: data.owner
     });
 
-    // 即時ローカル反映（この端末だけ）
+    // ⏱ ローカル即時表示更新（この端末だけ）
     let displayTime;
     if (running && startTime) {
       const now = Date.now() + timeOffset;
       const elapsed = Math.floor((now - startTime) / 1000);
-      const newRemaining = newDuration - elapsed;
-      displayTime = formatTime(Math.max(0, newRemaining));
+      const remaining = Math.max(0, newDuration - elapsed);
+      displayTime = formatTime(remaining);
     } else {
       displayTime = formatTime(newDuration);
     }
+
     document.getElementById("display" + i).innerText = displayTime;
   });
 };
+
 
 
 
