@@ -401,6 +401,9 @@ function startDisplayLoop(name, i, timerRef) {
       running: running && duration > 0,
       owner: data.owner
     });
+
+    document.getElementById("display" + i).innerText = formatTime(duration);
+
   }, { onlyOnce: true });
 };
 
