@@ -203,7 +203,7 @@ function updateClockTime() {
 
   requestAnimationFrame(updateClockTime); // ←次のフレームで再実行
 }
-　 
+
   requestAnimationFrame(updateClockTime);
 
    const timerLabels = [
@@ -215,7 +215,7 @@ function updateClockTime() {
      "APCまで",
      "次セグスタートまで",
      "エンディングまで",  // ←追加
- 　　 "汎用タイマー"  // ←追加
+     "汎用タイマー"  // ←追加
    ];
 
    const timerKeys = [
@@ -299,7 +299,7 @@ function updateClockTime() {
   const h = parseInt(document.getElementById("h" + i).value) || 0;
   const m = parseInt(document.getElementById("m" + i).value) || 0;
   const s = parseInt(document.getElementById("s" + i).value) || 0;
-  const totalSeconds = h * 3600 + m * 60 + s;
+  const duration = h * 3600 + m * 60 + s;
 
  if (duration <= 0) return; // ★← 追加：0秒以下なら無視
 
@@ -319,23 +319,21 @@ function updateClockTime() {
   };
    
 
-   window.resetTimer = function (name, i) {
-     clearInterval(intervals[name]);
-     const h = parseInt(document.getElementById("h" + i).value) || 0;
-     const m = parseInt(document.getElementById("m" + i).value) || 0;
-     const s = parseInt(document.getElementById("s" + i).value) || 0;
-     const totalSeconds = h * 3600 + m * 60 + s;
-     // タイマー停止 & endTime 無効化
+  window.resetTimer = function (name, i) {
+  clearInterval(intervals[name]);
   const timerRef = ref(db, "sharedTimers/" + name);
-   set(timerRef, {
+  
+  set(timerRef, {
     startTime: null,
     duration: 0,
     running: false,
     owner: null
   });
-  // 表示ループ再開（0を表示させるため）
-   document.getElementById("display" + i).innerText = formatTime(0);
+
+  document.getElementById("display" + i).innerText = formatTime(0);
 };
+
+
 
 function startDisplayLoop(name, i, timerRef) {
   // すでに動いていれば一度止める
