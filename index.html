@@ -118,7 +118,7 @@ button:hover {
 }
 
 .adjust-minus {
-  background-color: #7de155;  /* 緑 */
+  background-color: #35f33c;  /* 緑 */
   color: white;
 }
 
@@ -345,6 +345,7 @@ document.getElementById("display" + i).innerText = formatTime(duration);
 
 
 function startDisplayLoop(name, i, timerRef) {
+  // すでに動いていれば一度止める
   clearInterval(intervals["disp_" + name]);
 
   intervals["disp_" + name] = setInterval(() => {
@@ -353,56 +354,58 @@ function startDisplayLoop(name, i, timerRef) {
       if (!data) return;
 
       let displayTime;
+      if (data.running && data.startTime != null && data.duration != null) {
+        const remaining = getRemainingTime(data.startTime, data.duration);
+        displayTime = formatTime(remaining);
 
-      if (data.running && typeof data.time === "number") {
-        // 旧方式：data.timeを毎回減算
-        data.time--;
-        if (data.time < 0) data.time = 0;
-
-        displayTime = formatTime(data.time);
-
-        // Firebaseの値も更新（毎秒デクリメント）
-        set(timerRef, {
-          time: data.time,
-          running: data.time > 0,
-          owner: data.owner || deviceId
-        });
+        if (remaining === 0) {
+          set(timerRef, { running: false, startTime: null, duration: 0, owner: null });
+        }
       } else {
-        displayTime = formatTime(data.time || 0);
+        displayTime = formatTime(data.duration || 0);
       }
 
       document.getElementById("display" + i).innerText = displayTime;
     }, { onlyOnce: true });
-  }, 1000); // ←1秒おきに減算
+  }, 500);
 }
 
 
-  window.adjustTime = function (name, i, isAdd) {
+   window.adjustTime = function (name, i, isAdd) {
   const adjustInput = document.getElementById(`adjust${i}`);
   const adjustSeconds = parseInt(adjustInput.value) || 0;
   const timerRef = ref(db, "sharedTimers/" + name);
 
-  onValue(timerRef, (snapshot) => {
+  get(timerRef).then((snapshot)=> {
     const data = snapshot.val();
     if (!data) return;
 
-    let newTime = isAdd ? data.time + adjustSeconds : data.time - adjustSeconds;
-    if (newTime < 0) newTime = 0;
+     let duration = data.duration || 0;
+    let startTime = data.startTime || (Date.now() + timeOffset);
+    let running = data.running;
 
-    // Firebase 更新
+    if (running) {
+      const remaining = getRemainingTime(startTime, duration);
+      const newRemaining = isAdd ? remaining + adjustSeconds : remaining - adjustSeconds;
+      duration = newRemaining;
+      startTime = Date.now() + timeOffset; // 今を再スタート時間にする
+    } else {
+      duration = isAdd ? duration + adjustSeconds : duration - adjustSeconds;
+    }
+
+    if (duration < 0) duration = 0;
+
     set(timerRef, {
-      time: newTime,
-      running: true,
-      owner: data.owner || deviceId
+      startTime: running ? startTime : null,
+      duration: duration,
+      running: running && duration > 0,
+      owner: data.owner
     });
 
-    // ローカル即時表示更新
-    document.getElementById("display" + i).innerText = formatTime(newTime);
-  }, { onlyOnce: true });
+     const displayTime = formatTime(duration);
+    document.getElementById("display" + i).innerText = displayTime;
+  });
 };
-
-
-
 
 
    window.convertQuick = function (i) {
