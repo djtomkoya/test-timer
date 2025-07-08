@@ -370,13 +370,14 @@ function startDisplayLoop(name, i, timerRef) {
   }, 500);
 }
 
+import { get } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
 
    window.adjustTime = function (name, i, isAdd) {
   const adjustInput = document.getElementById(`adjust${i}`);
   const adjustSeconds = parseInt(adjustInput.value) || 0;
   const timerRef = ref(db, "sharedTimers/" + name);
 
-  onValue(timerRef, (snapshot) => {
+  get(timerRef, (snapshot) => {
     const data = snapshot.val();
     if (!data) return;
 
@@ -402,9 +403,9 @@ function startDisplayLoop(name, i, timerRef) {
       owner: data.owner
     });
 
-    document.getElementById("display" + i).innerText = formatTime(duration);
-
-  }, { onlyOnce: true });
+     const displayTime = formatTime(duration);
+    document.getElementById("display" + i).innerText = displayTime;
+  });
 };
 
 
