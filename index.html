@@ -331,6 +331,11 @@ function updateClockTime() {
   });
 
   document.getElementById("display" + i).innerText = formatTime(0);
+
+  document.getElementById("h" + i).value = 0;
+  document.getElementById("m" + i).value = 0;
+  document.getElementById("s" + i).value = 0;
+  document.getElementById("quick" + i).value = "";  // ← まとめ入力欄もクリア（任意）
 };
 
 
