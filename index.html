@@ -345,7 +345,6 @@ document.getElementById("display" + i).innerText = formatTime(duration);
 
 
 function startDisplayLoop(name, i, timerRef) {
-  // すでに動いていれば一度止める
   clearInterval(intervals["disp_" + name]);
 
   intervals["disp_" + name] = setInterval(() => {
@@ -354,20 +353,27 @@ function startDisplayLoop(name, i, timerRef) {
       if (!data) return;
 
       let displayTime;
-      if (data.running && data.startTime != null && data.duration != null) {
-        const remaining = getRemainingTime(data.startTime, data.duration);
-        displayTime = formatTime(remaining);
 
-        if (remaining === 0) {
-          set(timerRef, { running: false, startTime: null, duration: 0, owner: null });
-        }
+      if (data.running && typeof data.time === "number") {
+        // 旧方式：data.timeを毎回減算
+        data.time--;
+        if (data.time < 0) data.time = 0;
+
+        displayTime = formatTime(data.time);
+
+        // Firebaseの値も更新（毎秒デクリメント）
+        set(timerRef, {
+          time: data.time,
+          running: data.time > 0,
+          owner: data.owner || deviceId
+        });
       } else {
-        displayTime = formatTime(data.duration || 0);
+        displayTime = formatTime(data.time || 0);
       }
 
       document.getElementById("display" + i).innerText = displayTime;
     }, { onlyOnce: true });
-  }, 500);
+  }, 1000); // ←1秒おきに減算
 }
 
 
