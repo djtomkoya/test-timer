@@ -288,7 +288,11 @@ function updateClockTime() {
       return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
 
-
+  function getRemainingTime(startTime, duration) {
+  const now = Date.now() + timeOffset;
+  const elapsed = Math.floor((now - startTime) / 1000);
+  return Math.max(0, duration - elapsed);
+}
 
 
   window.startTimer = function (name, i) {
@@ -297,15 +301,19 @@ function updateClockTime() {
   const s = parseInt(document.getElementById("s" + i).value) || 0;
   const totalSeconds = h * 3600 + m * 60 + s;
 
-  if (totalSeconds <= 0) return;  // ★← 追加：0秒以下なら無視
+ if (duration <= 0) return; // ★← 追加：0秒以下なら無視
 
   const timerRef = ref(db, "sharedTimers/" + name);
-  clearInterval(intervals[name]); // 古いインターバルを停止
 
   const now = Date.now() + timeOffset;
-  const endTime = now + totalSeconds * 1000;
+  
 
-  set(timerRef, { time: totalSeconds, endTime: endTime, running: true, owner: deviceId });
+   set(timerRef, {
+    startTime: now,
+    duration: duration,
+    running: true,
+    owner: deviceId
+  });
 
   startDisplayLoop(name, i, timerRef);
   };
@@ -319,9 +327,14 @@ function updateClockTime() {
      const totalSeconds = h * 3600 + m * 60 + s;
      // タイマー停止 & endTime 無効化
   const timerRef = ref(db, "sharedTimers/" + name);
-   set(timerRef, { time: 0, running: false, endTime: null, owner: null });
+   set(timerRef, {
+    startTime: null,
+    duration: 0,
+    running: false,
+    owner: null
+  });
   // 表示ループ再開（0を表示させるため）
-  startDisplayLoop(name, i, timerRef);
+   document.getElementById("display" + i).innerText = formatTime(0);
 };
 
 function startDisplayLoop(name, i, timerRef) {
@@ -334,20 +347,21 @@ function startDisplayLoop(name, i, timerRef) {
       if (!data) return;
 
       let displayTime;
-      if (data.running && data.endTime) {
-        const now = Date.now() + timeOffset;
-        let remaining = Math.max(0, Math.floor((data.endTime - now) / 1000));
+      if (data.running && data.startTime != null && data.duration != null) {
+        const remaining = getRemainingTime(data.startTime, data.duration);
         displayTime = formatTime(remaining);
+
+        if (remaining === 0) {
+          set(timerRef, { running: false, startTime: null, duration: 0, owner: null });
+        }
       } else {
-        displayTime = formatTime(data.time);
+        displayTime = formatTime(data.duration || 0);
       }
 
       document.getElementById("display" + i).innerText = displayTime;
-
     }, { onlyOnce: true });
-  }, 500); // 表示更新は0.5秒おきくらいが自然でおすすめ
+  }, 500);
 }
-
 
 
    window.adjustTime = function (name, i, isAdd) {
@@ -359,23 +373,28 @@ function startDisplayLoop(name, i, timerRef) {
     const data = snapshot.val();
     if (!data) return;
 
-    // 時刻差付き現在時刻
-    const now = Date.now() + timeOffset;
+     let duration = data.duration || 0;
+    let startTime = data.startTime || (Date.now() + timeOffset);
+    let running = data.running;
 
-    let newTime = isAdd ? data.time + adjustSeconds : data.time - adjustSeconds;
-    if (newTime < 0) newTime = 0;
-
-    // 新しい endTime を補正（running中だけ）
-    let newEndTime = null;
-    if (data.running && data.endTime) {
-      const timeLeft = Math.max(0, Math.floor((data.endTime - now) / 1000));
-      const adjustedTimeLeft = isAdd ? timeLeft + adjustSeconds : timeLeft - adjustSeconds;
-      newEndTime = now + Math.max(0, adjustedTimeLeft) * 1000;
+    if (running) {
+      const remaining = getRemainingTime(startTime, duration);
+      const newRemaining = isAdd ? remaining + adjustSeconds : remaining - adjustSeconds;
+      duration = newRemaining;
+      startTime = Date.now() + timeOffset; // 今を再スタート時間にする
+    } else {
+      duration = isAdd ? duration + adjustSeconds : duration - adjustSeconds;
     }
-    //
-    set(timerRef, { time: newTime, endTime: newEndTime, running: true, owner: deviceId });
 
-  }, { onlyOnce: true });  // 1回だけ取得して更新
+    if (duration < 0) duration = 0;
+
+    set(timerRef, {
+      startTime: running ? startTime : null,
+      duration: duration,
+      running: running && duration > 0,
+      owner: data.owner
+    });
+  }, { onlyOnce: true });
 };
 
 
