@@ -285,6 +285,8 @@ function updateClockTime() {
   const s = parseInt(document.getElementById("s" + i).value) || 0;
   const totalSeconds = h * 3600 + m * 60 + s;
 
+  if (totalSeconds <= 0) return;  // ★← 追加：0秒以下なら無視
+
   const timerRef = ref(db, "sharedTimers/" + name);
   clearInterval(intervals[name]); // 古いインターバルを停止
 
