@@ -158,8 +158,8 @@ button:hover {
   
   <script type="module">
 //オーナー処理をFirebaseに保存
-let deviceId = localStorage.getItem("deviceId");
-if (!deviceId) {
+  let deviceId = localStorage.getItem("deviceId");
+  if (!deviceId) {
   deviceId = crypto.randomUUID();
   localStorage.setItem("deviceId", deviceId);
 }
@@ -287,41 +287,7 @@ function updateClockTime() {
       const s = seconds % 60;
       return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
-  
- function startDisplayLoop(name, i, timerRef) {
-  function update() {
-    onValue(timerRef, (snapshot) => {
-      const data = snapshot.val();
-      if (!data || !data.endTime || !data.running) {
-        document.getElementById("display" + i).innerText = formatTime(0);
-        return;
-      }
 
-      const now = Date.now() + timeOffset;
-      let remaining = Math.floor((data.endTime - now) / 1000);
-
-      if (remaining <= 0) {
-        remaining = 0;
-
-        // タイマー停止 & オーナー解除（1回だけ実行）
-        if (data.running) {
-          set(timerRef, {
-            time: 0,
-            running: false,
-            endTime: null,
-            owner: null
-          });
-        }
-      }
-
-      document.getElementById("display" + i).innerText = formatTime(remaining);
-    }, { onlyOnce: true });
-
-    requestAnimationFrame(update);
-  }
-
-  update(); // 最初の実行
-}
 
 
 
@@ -342,7 +308,7 @@ function updateClockTime() {
   set(timerRef, { time: totalSeconds, endTime: endTime, running: true, owner: deviceId });
 
   startDisplayLoop(name, i, timerRef);
-
+  };
    
 
    window.resetTimer = function (name, i) {
@@ -353,7 +319,7 @@ function updateClockTime() {
      const totalSeconds = h * 3600 + m * 60 + s;
      // タイマー停止 & endTime 無効化
   const timerRef = ref(db, "sharedTimers/" + name);
-  set(timerRef, { time: 0, running: false, endTime: null });
+   set(timerRef, { time: 0, running: false, endTime: null, owner: null });
   // 表示ループ再開（0を表示させるため）
   startDisplayLoop(name, i, timerRef);
 };
@@ -442,19 +408,7 @@ function setupEnterKeyToStart(i, name) {
   });
 }
 
-   window.resetTimer = function (name, i) {
- clearInterval(intervals[name]);
-
- // 入力欄をすべて空にする
- document.getElementById("h" + i).value = "";
- document.getElementById("m" + i).value = "";
- document.getElementById("s" + i).value = "";
- document.getElementById("quick" + i).value = "";
-
- // タイマーを0秒で止める
- const timerRef = ref(db, "sharedTimers/" + name);
- set(timerRef, { time: 0, running: false });
-};
+ 
 
 document.getElementById("scrollTopBtn").onclick = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
