@@ -306,6 +306,10 @@ function updateClockTime() {
   const timerRef = ref(db, "sharedTimers/" + name);
 
   const now = Date.now() + timeOffset;
+
+  // 表示をすぐ反映（カウントダウンの一拍待ちを解消）
+document.getElementById("display" + i).innerText = formatTime(totalSeconds);
+
   
 
    set(timerRef, {
