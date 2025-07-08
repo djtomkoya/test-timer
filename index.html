@@ -317,8 +317,12 @@ function updateClockTime() {
         newTime = 0;
       }
 
-       // ownerを上書きしないよう、ここではownerを保持
-      set(timerRef, { time: newTime, running: true, owner: data.owner });
+      set(timerRef, {
+  time: newTime,
+  running: newTime > 0,
+  owner: newTime === 0 ? null : data.owner  // 0秒になったらownerを消す
+});
+
     }, { onlyOnce: true });  // 毎秒1回だけ値を読む
   }, 1000);
 };
