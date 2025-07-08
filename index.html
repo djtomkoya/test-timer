@@ -371,7 +371,7 @@ function startDisplayLoop(name, i, timerRef) {
 }
 
 
-   window.adjustTime = function (name, i, isAdd) {
+  window.adjustTime = function (name, i, isAdd) {
   const adjustInput = document.getElementById(`adjust${i}`);
   const adjustSeconds = parseInt(adjustInput.value) || 0;
   const timerRef = ref(db, "sharedTimers/" + name);
@@ -384,27 +384,39 @@ function startDisplayLoop(name, i, timerRef) {
     const running = data.running;
     const startTime = data.startTime;
 
+    let newDuration;
+
     if (!startTime || !running) {
-      // 停止中なら単純にdurationだけ加減
-      duration = isAdd ? duration + adjustSeconds : duration - adjustSeconds;
+      newDuration = isAdd ? duration + adjustSeconds : duration - adjustSeconds;
     } else {
-      // 動作中：残り時間に加算したdurationを再構成（startTimeは触らない）
       const now = Date.now() + timeOffset;
       const elapsed = Math.floor((now - startTime) / 1000);
       const remaining = duration - elapsed;
       const newRemaining = isAdd ? remaining + adjustSeconds : remaining - adjustSeconds;
-
-      duration = elapsed + Math.max(0, newRemaining); // 新しいdurationを再構成
+      newDuration = elapsed + Math.max(0, newRemaining);
     }
 
-    if (duration < 0) duration = 0;
+    if (newDuration < 0) newDuration = 0;
 
+    // Firebase更新
     set(timerRef, {
-      startTime: startTime || null, // ←running中ならそのまま
-      duration: duration,
-      running: running && duration > 0,
+      startTime: startTime || null,
+      duration: newDuration,
+      running: running && newDuration > 0,
       owner: data.owner
     });
+
+    // 即時ローカル反映（この端末だけ）
+    let displayTime;
+    if (running && startTime) {
+      const now = Date.now() + timeOffset;
+      const elapsed = Math.floor((now - startTime) / 1000);
+      const newRemaining = newDuration - elapsed;
+      displayTime = formatTime(Math.max(0, newRemaining));
+    } else {
+      displayTime = formatTime(newDuration);
+    }
+    document.getElementById("display" + i).innerText = displayTime;
   });
 };
 
