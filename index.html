@@ -318,7 +318,7 @@ function updateClockTime() {
       }
 
        // ownerを上書きしないよう、ここではownerを保持
-      set(timerRef, { time: newTime, running: true, owner: data.owner });
+      set(timerRef, { time: totalSeconds, running: true, owner: deviceId });
     }, { onlyOnce: true });  // 毎秒1回だけ値を読む
   }, 1000);
 };
