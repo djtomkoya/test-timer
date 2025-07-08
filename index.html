@@ -166,7 +166,7 @@ button:hover {
   
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
   import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
- 
+ 　import { get } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
     
   const firebaseConfig = window.firebaseConfig;  
  
@@ -370,14 +370,13 @@ function startDisplayLoop(name, i, timerRef) {
   }, 500);
 }
 
-import { get } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
 
    window.adjustTime = function (name, i, isAdd) {
   const adjustInput = document.getElementById(`adjust${i}`);
   const adjustSeconds = parseInt(adjustInput.value) || 0;
   const timerRef = ref(db, "sharedTimers/" + name);
 
-  get(timerRef, (snapshot) => {
+  get(timerRef).then((snapshot)=> {
     const data = snapshot.val();
     if (!data) return;
 
