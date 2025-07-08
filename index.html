@@ -142,13 +142,6 @@ button:hover {
 #scrollBottomBtn {
   bottom: 30px;
 }
-/*オーナー以外グレーアウト*/
-button:disabled {
-  background-color: #ccc !important;
-  color: #666 !important;
-  cursor: not-allowed;
-}
-
 
  </style>
 
@@ -163,15 +156,7 @@ button:disabled {
  
 
   <script type="module">
-
-//devicedIdの生成処理　deviceIdをownerとしてFirebaseに記録
-let deviceId = localStorage.getItem("deviceId");
-if (!deviceId) {
-  deviceId = crypto.randomUUID();
-  localStorage.setItem("deviceId", deviceId);
-}
-
-  //Firebaseの初期化
+  
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
   import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
  
@@ -194,8 +179,6 @@ if (!deviceId) {
 
   let timeOffset = 0;
   const intervals = {};
-
-  
 
    // ❶ サーバーとの時刻差分を取得
 function syncServerTimeOffset() {
@@ -266,12 +249,13 @@ function updateClockTime() {
        <input type="number" id="h${i}" min="0" value="0"> h
        <input type="number" id="m${i}" min="0" max="59" value="0"> m
        <input type="number" id="s${i}" min="0" max="59" value="0"> s <br/>
-       <button class="btn-start" onclick="startTimer('${name}', ${i})">スタート</button>
-       <button class="btn-reset" onclick="resetTimer('${name}', ${i})">リセット</button>
+       <button onclick="startTimer('${name}', ${i})">スタート</button>
+       <button onclick="resetTimer('${name}', ${i})">リセット</button>
        
+
        <input type="number" id="adjust${i}" value="15" style="width: 80px; font-size: 24px;"> 秒
-      <button class="btn-plus" onclick="adjustTime('${name}', ${i}, true)">＋</button>
-<button class="btn-minus" onclick="adjustTime('${name}', ${i}, false)">−</button>
+      <button class="adjust-buttons adjust-plus" onclick="adjustTime('${name}', ${i}, true)">＋</button>
+<button class="adjust-buttons adjust-minus" onclick="adjustTime('${name}', ${i}, false)">−</button>
 
 
      `;
@@ -304,8 +288,8 @@ function updateClockTime() {
   const timerRef = ref(db, "sharedTimers/" + name);
   clearInterval(intervals[name]); // 古いインターバルを停止
 
-  // ★⑤ ここで owner を記録する
-set(timerRef, { time: totalSeconds, running: true, owner: deviceId });
+  // 初期値をFirebaseに設定
+  set(timerRef, { time: totalSeconds, running: true });
 
   // 1秒ごとに、Firebaseの最新値を取得して1減らして保存
   intervals[name] = setInterval(() => {
@@ -331,20 +315,14 @@ set(timerRef, { time: totalSeconds, running: true, owner: deviceId });
        
 
    window.resetTimer = function (name, i) {
-    const timerRef = ref(db, "sharedTimers/" + name);
-    onValue(timerRef, (snapshot) => {
-    const data = snapshot.val();
-    if (!data || data.owner !== deviceId) return;  // 他端末は無視
-
      clearInterval(intervals[name]);
      const h = parseInt(document.getElementById("h" + i).value) || 0;
      const m = parseInt(document.getElementById("m" + i).value) || 0;
      const s = parseInt(document.getElementById("s" + i).value) || 0;
      const totalSeconds = h * 3600 + m * 60 + s;
      const timerRef = ref(db, "sharedTimers/" + name);
-     set(timerRef, { time: totalSeconds, running: false, owner: data.owner });
-  }, { onlyOnce: true });
-};
+     set(timerRef, { time: totalSeconds, running: false });
+   };
 
    window.adjustTime = function (name, i, isAdd) {
   const adjustInput = document.getElementById(`adjust${i}`);
@@ -353,30 +331,14 @@ set(timerRef, { time: totalSeconds, running: true, owner: deviceId });
 
   onValue(timerRef, (snapshot) => {
     const data = snapshot.val();
-   if (!data || data.owner !== deviceId) return; // 他端末は無視
-
-    const isMine = data.owner === deviceId;
-
-    // ★④ ボタンの有効・無効を切り替える（自分の端末のみ有効）
-    const box = container.children[i]; // このタイマーのボックス
-    box.querySelector(".btn-start").disabled = !isMine;
-    box.querySelector(".btn-reset").disabled = !isMine;
-    box.querySelector(".btn-plus").disabled = !isMine;
-    box.querySelector(".btn-minus").disabled = !isMine;
-
-    // 時間表示を更新
-    document.getElementById("display" + i).innerText = formatTime(data.time);
-
-    // 自分のタイマーでなければ処理終了
-    if (!isMine) return;
+    if (!data) return;
 
     let newTime = isAdd ? data.time + adjustSeconds : data.time - adjustSeconds;
     if (newTime < 0) newTime = 0;
 
-    set(timerRef, { time: newTime, running: true, owner: data.owner });
-  }, { onlyOnce: true });
+    set(timerRef, { time: newTime, running: true });
+  }, { onlyOnce: true });  // 1回だけ取得して更新
 };
-
 
 
    window.convertQuick = function (i) {
