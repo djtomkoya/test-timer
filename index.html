@@ -157,6 +157,12 @@ button:hover {
 <script src="firebase-config.js"></script>
   
   <script type="module">
+//オーナー処理をFirebaseに保存
+let deviceId = localStorage.getItem("deviceId");
+if (!deviceId) {
+  deviceId = crypto.randomUUID();
+  localStorage.setItem("deviceId", deviceId);
+}
   
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
   import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
@@ -254,12 +260,22 @@ function updateClockTime() {
      container.appendChild(box);
 
      const timerRef = ref(db, "sharedTimers/" + name);
-     onValue(timerRef, (snapshot) => {
-       const data = snapshot.val();
-       if (data) {
+     // ★ここに追加！ボタンの有効/無効を制御するonValue
+  onValue(timerRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
+
          document.getElementById("display" + i).innerText = formatTime(data.time);
-       }
-     });
+         // 自分がオーナーか判定してボタン制御
+    const isOwner = data.owner === deviceId;
+    const box = container.children[i];
+    box.querySelector("button:nth-of-type(1)").disabled = !isOwner; // スタート
+    box.querySelector("button:nth-of-type(2)").disabled = !isOwner; // リセット
+    box.querySelector("button:nth-of-type(3)").disabled = !isOwner; // ＋
+    box.querySelector("button:nth-of-type(4)").disabled = !isOwner; // −
+  });
+       
+     
      setupEnterKeyToStart(i, name); // ← これを追加
 
    });
@@ -282,9 +298,10 @@ function updateClockTime() {
   const timerRef = ref(db, "sharedTimers/" + name);
   clearInterval(intervals[name]); // 古いインターバルを停止
 
-  // 初期値をFirebaseに設定
-  set(timerRef, { time: totalSeconds, running: true });
+  set(timerRef, { time: totalSeconds, running: true, owner: deviceId });
 
+
+  
   // 1秒ごとに、Firebaseの最新値を取得して1減らして保存
   intervals[name] = setInterval(() => {
     onValue(timerRef, (snapshot) => {
@@ -300,7 +317,8 @@ function updateClockTime() {
         newTime = 0;
       }
 
-      set(timerRef, { time: newTime, running: true });
+       // ownerを上書きしないよう、ここではownerを保持
+      set(timerRef, { time: newTime, running: true, owner: data.owner });
     }, { onlyOnce: true });  // 毎秒1回だけ値を読む
   }, 1000);
 };
