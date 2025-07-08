@@ -380,36 +380,42 @@ function startDisplayLoop(name, i, timerRef) {
     const data = snapshot.val();
     if (!data) return;
 
-    let duration = data.duration || 0;
     const running = data.running;
     const startTime = data.startTime;
+    const duration = data.duration || 0;
 
-    // durationだけ加減、startTimeは維持
-    let newDuration = isAdd ? duration + adjustSeconds : duration - adjustSeconds;
-    if (newDuration < 0) newDuration = 0;
+    const now = Date.now() + timeOffset;
 
-    // Firebase更新
+    let endTime;
+    if (running && startTime) {
+      // 終了時刻を計算
+      endTime = startTime + duration * 1000;
+    } else {
+      // 走っていない場合は now + duration
+      endTime = now + duration * 1000;
+    }
+
+    // ➕➖を加算（単位は秒 → ミリ秒へ）
+    const adjustedEndTime = endTime + (isAdd ? adjustSeconds : -adjustSeconds) * 1000;
+
+    // 新しいdurationは adjustedEndTime - startTime（or now）
+    const newStart = running && startTime ? startTime : now;
+    let newDuration = Math.max(0, Math.floor((adjustedEndTime - newStart) / 1000));
+
+    // 保存
     set(timerRef, {
-      startTime: startTime || null,
+      startTime: running ? newStart : null,
       duration: newDuration,
       running: running && newDuration > 0,
       owner: data.owner
     });
 
-    // ⏱ ローカル即時表示更新（この端末だけ）
-    let displayTime;
-    if (running && startTime) {
-      const now = Date.now() + timeOffset;
-      const elapsed = Math.floor((now - startTime) / 1000);
-      const remaining = Math.max(0, newDuration - elapsed);
-      displayTime = formatTime(remaining);
-    } else {
-      displayTime = formatTime(newDuration);
-    }
-
-    document.getElementById("display" + i).innerText = displayTime;
+    // 即時表示（この端末だけ）
+    const remaining = running ? Math.max(0, Math.floor((adjustedEndTime - now) / 1000)) : newDuration;
+    document.getElementById("display" + i).innerText = formatTime(remaining);
   });
 };
+
 
 
 
