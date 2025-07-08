@@ -331,14 +331,20 @@ set(timerRef, { time: totalSeconds, running: true, owner: deviceId });
        
 
    window.resetTimer = function (name, i) {
+    const timerRef = ref(db, "sharedTimers/" + name);
+    onValue(timerRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data || data.owner !== deviceId) return;  // 他端末は無視
+
      clearInterval(intervals[name]);
      const h = parseInt(document.getElementById("h" + i).value) || 0;
      const m = parseInt(document.getElementById("m" + i).value) || 0;
      const s = parseInt(document.getElementById("s" + i).value) || 0;
      const totalSeconds = h * 3600 + m * 60 + s;
      const timerRef = ref(db, "sharedTimers/" + name);
-     set(timerRef, { time: totalSeconds, running: false });
-   };
+     set(timerRef, { time: totalSeconds, running: false, owner: data.owner });
+  }, { onlyOnce: true });
+};
 
    window.adjustTime = function (name, i, isAdd) {
   const adjustInput = document.getElementById(`adjust${i}`);
@@ -347,7 +353,7 @@ set(timerRef, { time: totalSeconds, running: true, owner: deviceId });
 
   onValue(timerRef, (snapshot) => {
     const data = snapshot.val();
-    if (!data) return;
+   if (!data || data.owner !== deviceId) return; // 他端末は無視
 
     const isMine = data.owner === deviceId;
 
