@@ -283,6 +283,18 @@ function updateClockTime() {
      setupEnterKeyToStart(i, name); // ← これを追加
      setupPasswordProtection(i); // ← パスワード保護の初期化
 
+     function makeThisDeviceOwnerTemporarily() {
+  timerKeys.forEach((name, i) => {
+    const timerRef = ref(db, "sharedTimers/" + name);
+    set(timerRef, {
+      time: 0,
+      running: false,
+      owner: deviceId
+    });
+  });
+}
+
+
      
 
    });
@@ -393,20 +405,21 @@ function setupPasswordProtection(i) {
   ];
 
   inputs.forEach(input => {
-    input.addEventListener("focus", () => {
-      if (hasPasswordAccess) return; // すでに許可されていたら何もしない
+    input.addEventListener("mousedown", () => {
+      if (hasPasswordAccess) return;  // 既に認証済みなら何もしない
+
       const entered = prompt("操作にはパスワードが必要です:");
       if (entered === masterPassword) {
         alert("認証に成功しました。操作が可能になります。");
         hasPasswordAccess = true;
-        enableAllButtons(); // ←後述する関数
+        makeThisDeviceOwnerTemporarily(); // ← 修正②の関数を呼ぶ
       } else {
         alert("パスワードが間違っています。操作はできません。");
-        input.blur();  // フォーカスを外す
       }
     });
   });
 }
+
 function enableAllButtons() {
   document.querySelectorAll("button").forEach(btn => {
     btn.disabled = false;
