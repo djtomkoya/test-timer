@@ -157,10 +157,19 @@ button:hover {
 
  <button id="scrollTopBtn">↑ 商品</button>
  <button id="scrollBottomBtn">↓ Recap</button>
+
+ <button id="showPasswordBtn">🔓 操作解除</button>
+
+<div id="password-box" style="display: none; margin-top: 10px;">
+  <input type="password" id="passwordInput" placeholder="パスワードを入力">
+  <button onclick="unlockAccess()">解除</button>
+</div>
+
  
 <script src="firebase-config.js"></script>
   
-  <script type="module">
+<script type="module">
+
 //オーナー処理をFirebaseに保存
   let deviceId = localStorage.getItem("deviceId");
   if (!deviceId) {
@@ -181,6 +190,33 @@ button:hover {
 
   let timeOffset = 0;
   const intervals = {};
+
+//パスワード設定
+  let isUnlocked = false;
+const correctPassword = "9999"; // ← 任意のパスワードに変更OK
+
+document.getElementById("showPasswordBtn").onclick = () => {
+  document.getElementById("password-box").style.display = "block";
+  document.getElementById("showPasswordBtn").style.display = "none";
+};
+
+function unlockAccess() {
+  const input = document.getElementById("passwordInput").value;
+  if (input === correctPassword) {
+    alert("認証に成功");
+    isUnlocked = true;
+    enableAllButtons();
+  } else {
+    alert("パスワードが違います");
+  }
+}
+
+function enableAllButtons() {
+  document.querySelectorAll(".timer-box").forEach(box => {
+    box.querySelectorAll("button").forEach(btn => btn.disabled = false);
+  });
+}
+
 
    // ❶ サーバーとの時刻差分を取得
 function syncServerTimeOffset() {
@@ -272,8 +308,10 @@ function updateClockTime() {
     startDisplayLoop(name, i, timerRef);
 
          // 自分がオーナーか判定してボタン制御
-    const isOwner = !data.owner || data.owner === deviceId;
+    const isOwner = !data.owner || data.owner === deviceId || isUnlocked;
+
     const box = container.children[i];
+
     box.querySelector(".start-button").disabled = !isOwner; // スタート
     box.querySelector(".reset-button").disabled = !isOwner; // リセット
     box.querySelector(".adjust-plus").disabled = !isOwner; // ＋
