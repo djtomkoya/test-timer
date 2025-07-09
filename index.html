@@ -142,6 +142,24 @@ button:hover {
 #scrollBottomBtn {
   bottom: 30px;
 }
+/* 既存スタイルは省略（そのまま残してOK） */
+    #password-box {
+      position: fixed;
+      top: 20px;
+      right: 30px;
+      background: #fff;
+      border: 2px solid #ccc;
+      padding: 10px;
+      border-radius: 10px;
+      z-index: 2000;
+    }
+    #password-box input {
+      font-size: 20px;
+    }
+    #password-box button {
+      font-size: 18px;
+      margin-left: 10px;
+    }
 
  </style>
 
@@ -149,6 +167,13 @@ button:hover {
   <h1>開発用タイマー石川</h1>
 
   <div id="timers"></div>
+
+<div id="password-box" style="display: none; margin-top: 10px;">
+  <input type="password" id="passwordInput" placeholder="パスワードを入力">
+  <button onclick="unlockAccess()">解除</button>
+</div>
+<div id="timers"></div>
+
 
 <button class="start-button">スタート</button>
 <button class="reset-button">リセット</button>
@@ -160,10 +185,6 @@ button:hover {
 
  <button id="showPasswordBtn">🔓 操作解除</button>
 
-<div id="password-box" style="display: none; margin-top: 10px;">
-  <input type="password" id="passwordInput" placeholder="パスワードを入力">
-  <button onclick="unlockAccess()">解除</button>
-</div>
 
  
 <script src="firebase-config.js"></script>
