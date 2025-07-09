@@ -7,35 +7,35 @@
 <style>
    body { font-family: sans-serif; text-align: center; margin-top: 40px; }
    .timer-box {
-     border: 1px solid #ccc; margin: 20px auto; padding: 10px; width: 1000px; border-radius: 10px;
+     border: 1px solid #ccc; margin: 20px auto; padding: 10px; width: 950px; border-radius: 10px;
    }
    h2 { margin-bottom: 10px; }
    input, button { font-size: 30px; margin: 5px; padding: 5px 10px; }
    input[type="number"] { width: 150px; text-align: right; }
  .display-time {
-     font-size: 210px;
+     font-size: 200px;
      font-weight: bold;
      color: #f94903;
      margin-bottom: 15px;
    }
 
 .apc-title { color: rgb(232, 3, 3); font-size: 40px;
-   font-size: 95px;
+   font-size: 80px;
  font-weight: bold;
  font-family: Arial, Helvetica, sans-serif;
- text-shadow: 3px 3px 6px #aaa;}
+ text-shadow: 2px 2px 5px #aaa;}
 
 .shohin-title {
- color: #0077ee;
- font-size: 90px;
+ color: #0080ff;
+ font-size: 70px;
  font-weight: bold;
  font-family:Arial, Helvetica, sans-serif;
- text-shadow: 3px 3px 6px #aaa;
+ text-shadow: 2px 2px 5px #aaa;
 
 }
 .recap-title {
  color: #003937;      /* オレンジっぽい派手な色 */
- font-size: 80px;
+ font-size: 70px;
  font-weight: bold;
  text-shadow: 2px 2px 5px #aaa;
  font-family: 'Arial Black', sans-serif;
@@ -142,24 +142,6 @@ button:hover {
 #scrollBottomBtn {
   bottom: 30px;
 }
-/* 既存スタイルは省略（そのまま残してOK） */
-    #password-box {
-      position: fixed;
-      top: 20px;
-      right: 30px;
-      background: #fff;
-      border: 2px solid #ccc;
-      padding: 10px;
-      border-radius: 10px;
-      z-index: 2000;
-    }
-    #password-box input {
-      font-size: 20px;
-    }
-    #password-box button {
-      font-size: 18px;
-      margin-left: 10px;
-    }
 
  </style>
 
@@ -168,13 +150,6 @@ button:hover {
 
   <div id="timers"></div>
 
-<div id="password-box" style="display: none; margin-top: 10px;">
-  <input type="password" id="passwordInput" placeholder="パスワードを入力">
-  <button onclick="unlockAccess()">解除</button>
-</div>
-<div id="timers"></div>
-
-
 <button class="start-button">スタート</button>
 <button class="reset-button">リセット</button>
 <button class="adjust-plus">＋</button>
@@ -182,25 +157,20 @@ button:hover {
 
  <button id="scrollTopBtn">↑ 商品</button>
  <button id="scrollBottomBtn">↓ Recap</button>
-
- <button id="showPasswordBtn">🔓 操作解除</button>
-
-
  
 <script src="firebase-config.js"></script>
   
-<script type="module">
-
+  <script type="module">
 //オーナー処理をFirebaseに保存
-  let deviceId = localStorage.getItem("deviceId");
-  if (!deviceId) {
+let deviceId = localStorage.getItem("deviceId");
+if (!deviceId) {
   deviceId = crypto.randomUUID();
   localStorage.setItem("deviceId", deviceId);
 }
   
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
   import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
- 　import { get } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+ 
     
   const firebaseConfig = window.firebaseConfig;  
  
@@ -211,33 +181,6 @@ button:hover {
 
   let timeOffset = 0;
   const intervals = {};
-
-//パスワード設定
-  let isUnlocked = false;
-const correctPassword = "9999"; // ← 任意のパスワードに変更OK
-
-document.getElementById("showPasswordBtn").onclick = () => {
-  document.getElementById("password-box").style.display = "block";
-  document.getElementById("showPasswordBtn").style.display = "none";
-};
-
-function unlockAccess() {
-  const input = document.getElementById("passwordInput").value;
-  if (input === correctPassword) {
-    alert("認証に成功");
-    isUnlocked = true;
-    enableAllButtons();
-  } else {
-    alert("パスワードが違います");
-  }
-}
-
-function enableAllButtons() {
-  document.querySelectorAll(".timer-box").forEach(box => {
-    box.querySelectorAll("button").forEach(btn => btn.disabled = false);
-  });
-}
-
 
    // ❶ サーバーとの時刻差分を取得
 function syncServerTimeOffset() {
@@ -264,7 +207,7 @@ function updateClockTime() {
 
   requestAnimationFrame(updateClockTime); // ←次のフレームで再実行
 }
-
+　 
   requestAnimationFrame(updateClockTime);
 
    const timerLabels = [
@@ -276,7 +219,7 @@ function updateClockTime() {
      "APCまで",
      "次セグスタートまで",
      "エンディングまで",  // ←追加
-     "汎用タイマー"  // ←追加
+ 　　 "汎用タイマー"  // ←追加
    ];
 
    const timerKeys = [
@@ -325,19 +268,17 @@ function updateClockTime() {
   onValue(timerRef, (snapshot) => {
     const data = snapshot.val();
     if (!data) return;
-    
-    startDisplayLoop(name, i, timerRef);
 
+         document.getElementById("display" + i).innerText = formatTime(data.time);
          // 自分がオーナーか判定してボタン制御
-    const isOwner = !data.owner || data.owner === deviceId || isUnlocked;
-
+    const isOwner = !data.owner || data.owner === deviceId;
     const box = container.children[i];
-
     box.querySelector(".start-button").disabled = !isOwner; // スタート
     box.querySelector(".reset-button").disabled = !isOwner; // リセット
     box.querySelector(".adjust-plus").disabled = !isOwner; // ＋
     box.querySelector(".adjust-minus").disabled = !isOwner; // −
   });
+
        
      
      setupEnterKeyToStart(i, name); // ← これを追加
@@ -351,87 +292,45 @@ function updateClockTime() {
       return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
 
-  function getRemainingTime(startTime, duration) {
-  const now = Date.now() + timeOffset;
-  const elapsed = Math.floor((now - startTime) / 1000);
-  return Math.max(0, duration - elapsed);
-}
-
-
-  window.startTimer = function (name, i) {
+    window.startTimer = function (name, i) {
   const h = parseInt(document.getElementById("h" + i).value) || 0;
   const m = parseInt(document.getElementById("m" + i).value) || 0;
   const s = parseInt(document.getElementById("s" + i).value) || 0;
-  const duration = h * 3600 + m * 60 + s;
+  const totalSeconds = h * 3600 + m * 60 + s;
 
- if (duration <= 0) return; // ★← 追加：0秒以下なら無視
+  if (totalSeconds <= 0) return;  // ★← 追加：0秒以下なら無視
 
   const timerRef = ref(db, "sharedTimers/" + name);
+  clearInterval(intervals[name]); // 古いインターバルを停止
 
-  const now = Date.now() + timeOffset;
+  set(timerRef, { time: totalSeconds, running: true, owner: deviceId });
 
-  // 表示をすぐ反映（カウントダウンの一拍待ちを解消）
-document.getElementById("display" + i).innerText = formatTime(duration);
 
   
-
-   set(timerRef, {
-    startTime: now,
-    duration: duration,
-    running: true,
-    owner: deviceId
-  });
-
-  startDisplayLoop(name, i, timerRef);
-  };
-   
-
-  window.resetTimer = function (name, i) {
-  clearInterval(intervals[name]);
-  const timerRef = ref(db, "sharedTimers/" + name);
-  
-  set(timerRef, {
-    startTime: null,
-    duration: 0,
-    running: false,
-    owner: null
-  });
-
-  document.getElementById("display" + i).innerText = formatTime(0);
-
-  document.getElementById("h" + i).value = 0;
-  document.getElementById("m" + i).value = 0;
-  document.getElementById("s" + i).value = 0;
-  document.getElementById("quick" + i).value = "";  // ← まとめ入力欄もクリア（任意）
-};
-
-
-
-function startDisplayLoop(name, i, timerRef) {
-  // すでに動いていれば一度止める
-  clearInterval(intervals["disp_" + name]);
-
-  intervals["disp_" + name] = setInterval(() => {
+  // 1秒ごとに、Firebaseの最新値を取得して1減らして保存
+  intervals[name] = setInterval(() => {
     onValue(timerRef, (snapshot) => {
       const data = snapshot.val();
-      if (!data) return;
-
-      let displayTime;
-      if (data.running && data.startTime != null && data.duration != null) {
-        const remaining = getRemainingTime(data.startTime, data.duration);
-        displayTime = formatTime(remaining);
-
-        if (remaining === 0) {
-          set(timerRef, { running: false, startTime: null, duration: 0, owner: null });
-        }
-      } else {
-        displayTime = formatTime(data.duration || 0);
+      if (!data || !data.running) {
+        clearInterval(intervals[name]);
+        return;
       }
 
-      document.getElementById("display" + i).innerText = displayTime;
-    }, { onlyOnce: true });
-  }, 500);
-}
+      let newTime = data.time - 1;
+      if (newTime < 0) {
+        clearInterval(intervals[name]);
+        newTime = 0;
+      }
+
+      set(timerRef, {
+  time: newTime,
+  running: newTime > 0,
+  owner: newTime === 0 ? null : data.owner  // 0秒になったらownerを消す
+});
+
+    }, { onlyOnce: true });  // 毎秒1回だけ値を読む
+  }, 1000);
+};
 
 
    window.adjustTime = function (name, i, isAdd) {
@@ -439,35 +338,16 @@ function startDisplayLoop(name, i, timerRef) {
   const adjustSeconds = parseInt(adjustInput.value) || 0;
   const timerRef = ref(db, "sharedTimers/" + name);
 
-  get(timerRef).then((snapshot)=> {
+  onValue(timerRef, (snapshot) => {
     const data = snapshot.val();
     if (!data) return;
 
-     let duration = data.duration || 0;
-    let startTime = data.startTime || (Date.now() + timeOffset);
-    let running = data.running;
+    let newTime = isAdd ? data.time + adjustSeconds : data.time - adjustSeconds;
+    if (newTime < 0) newTime = 0;
+    //
+    set(timerRef, { time: newTime, running: true, owner: deviceId });
 
-    if (running) {
-      const remaining = getRemainingTime(startTime, duration);
-      const newRemaining = isAdd ? remaining + adjustSeconds : remaining - adjustSeconds;
-      duration = newRemaining;
-      startTime = Date.now() + timeOffset; // 今を再スタート時間にする
-    } else {
-      duration = isAdd ? duration + adjustSeconds : duration - adjustSeconds;
-    }
-
-    if (duration < 0) duration = 0;
-
-    set(timerRef, {
-      startTime: running ? startTime : null,
-      duration: duration,
-      running: running && duration > 0,
-      owner: data.owner
-    });
-
-     const displayTime = formatTime(duration);
-    document.getElementById("display" + i).innerText = displayTime;
-  });
+  }, { onlyOnce: true });  // 1回だけ取得して更新
 };
 
 
@@ -500,7 +380,19 @@ function setupEnterKeyToStart(i, name) {
   });
 }
 
- 
+   window.resetTimer = function (name, i) {
+ clearInterval(intervals[name]);
+
+ // 入力欄をすべて空にする
+ document.getElementById("h" + i).value = "";
+ document.getElementById("m" + i).value = "";
+ document.getElementById("s" + i).value = "";
+ document.getElementById("quick" + i).value = "";
+
+ // タイマーを0秒で止める
+ const timerRef = ref(db, "sharedTimers/" + name);
+ set(timerRef, { time: 0, running: false });
+};
 
 document.getElementById("scrollTopBtn").onclick = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
