@@ -167,7 +167,7 @@ if (!deviceId) {
 }
   
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+  import { getDatabase, ref, set, onValue,update } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
  
     
   const firebaseConfig = window.firebaseConfig;  
@@ -283,16 +283,15 @@ function updateClockTime() {
      setupEnterKeyToStart(i, name); // ← これを追加
      setupPasswordProtection(i); // ← パスワード保護の初期化
 
-     function makeThisDeviceOwnerTemporarily() {
-  timerKeys.forEach((name, i) => {
+    function makeThisDeviceOwnerTemporarily() {
+  timerKeys.forEach((name) => {
     const timerRef = ref(db, "sharedTimers/" + name);
-    set(timerRef, {
-      time: 0,
-      running: false,
-      owner: deviceId
+    update(timerRef, {
+      owner: deviceId  // ← ここだけを上書き！
     });
   });
 }
+
 
 
      
