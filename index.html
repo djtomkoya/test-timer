@@ -271,7 +271,9 @@ function updateClockTime() {
 
          document.getElementById("display" + i).innerText = formatTime(data.time);
          // 自分がオーナーか判定してボタン制御
-    const isOwner = !data.owner || data.owner === deviceId;
+    const isOwner = (data.owner === deviceId);
+     hasPasswordAccess = isOwner;
+     
     const box = container.children[i];
     box.querySelector("button:nth-of-type(1)").disabled = !isOwner; // スタート
     box.querySelector("button:nth-of-type(2)").disabled = !isOwner; // リセット
