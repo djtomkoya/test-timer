@@ -264,6 +264,9 @@ function updateClockTime() {
      // ★ここに追加！ボタンの有効/無効を制御するonValue
   onValue(timerRef, (snapshot) => {
     const data = snapshot.val();
+
+    console.log("onValue発火", name, data);  // ← ここ！
+
     if (!data) return;
 
          document.getElementById("display" + i).innerText = formatTime(data.time);
