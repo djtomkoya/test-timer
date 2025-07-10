@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>開発用タイマー</title>
+  <title>石川中継タイマー</title>
   
 </head>
 <style>
@@ -146,7 +146,7 @@ button:hover {
  </style>
 
 <body>
-  <h1>開発用タイマー</h1>
+  <h1>石川中継タイマー</h1>
 
   <div id="timers"></div>
 
@@ -417,7 +417,9 @@ document.getElementById("forceReleaseBtn").addEventListener("click", () => {
   timerKeys.forEach(name => {
     const timerRef = ref(db, "sharedTimers/" + name);
     update(timerRef, {
-      owner: null  // ← これだけでOK（タイマーは止めない）
+      owner: null,
+      // ★ ダミー値を追加して onValue を確実に発火させる
+      updatedAt: Date.now()  // ← これだけでOK（タイマーは止めない）
     });
   });
 
