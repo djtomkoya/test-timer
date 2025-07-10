@@ -278,14 +278,7 @@ const resetBtn = box.querySelector(`button[onclick="resetTimer('${name}', ${i})"
 const plusBtn = box.querySelector(`button[onclick="adjustTime('${name}', ${i}, true)"]`);
 const minusBtn = box.querySelector(`button[onclick="adjustTime('${name}', ${i}, false)"]`);
 
-if (startBtn) startBtn.disabled = !isOwner;
-if (resetBtn) resetBtn.disabled = !isOwner;
-if (plusBtn) plusBtn.disabled = !isOwner;
-if (minusBtn) minusBtn.disabled = !isOwner;
 
-
-  });
-     
      setupEnterKeyToStart(i, name); // ← これを追加
 
    });
