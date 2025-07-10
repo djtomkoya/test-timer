@@ -249,12 +249,12 @@ function updateClockTime() {
        <input type="number" id="m${i}" min="0" max="59" value="0"> m
        <input type="number" id="s${i}" min="0" max="59" value="0"> s <br/>
        <button onclick="startTimer('${name}', ${i})">スタート</button>
-       <button onclick="resetTimer('${name}', ${i})">リセット</button>
-       
+       <button id="start${i}" onclick="startTimer('${name}', ${i})">スタート</button>
+  <button id="reset${i}" onclick="resetTimer('${name}', ${i})">リセット</button>
 
-       <input type="number" id="adjust${i}" value="15" style="width: 80px; font-size: 24px;"> 秒
-      <button class="adjust-buttons adjust-plus" onclick="adjustTime('${name}', ${i}, true)">＋</button>
-<button class="adjust-buttons adjust-minus" onclick="adjustTime('${name}', ${i}, false)">−</button>
+  <input type="number" id="adjust${i}" value="15" style="width: 80px; font-size: 24px;"> 秒
+  <button id="plus${i}" class="adjust-buttons adjust-plus" onclick="adjustTime('${name}', ${i}, true)">＋</button>
+  <button id="minus${i}" class="adjust-buttons adjust-minus" onclick="adjustTime('${name}', ${i}, false)">−</button>
 
 
      `;
@@ -273,12 +273,14 @@ function updateClockTime() {
     const box = container.children[i];
 
 // 明示的なセレクタに修正（再掲）
-const startBtn = box.querySelector(`button[onclick="startTimer('${name}', ${i})"]`);
-const resetBtn = box.querySelector(`button[onclick="resetTimer('${name}', ${i})"]`);
-const plusBtn = box.querySelector(`button[onclick="adjustTime('${name}', ${i}, true)"]`);
-const minusBtn = box.querySelector(`button[onclick="adjustTime('${name}', ${i}, false)"]`);
+document.getElementById(`start${i}`).disabled = !isOwner;
+document.getElementById(`reset${i}`).disabled = !isOwner;
+document.getElementById(`plus${i}`).disabled = !isOwner;
+document.getElementById(`minus${i}`).disabled = !isOwner;
 
 
+  });
+     
      setupEnterKeyToStart(i, name); // ← これを追加
 
    });
