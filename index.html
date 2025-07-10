@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>石川中継タイマー</title>
+  <title>開発用タイマー</title>
   
 </head>
 <style>
@@ -146,7 +146,7 @@ button:hover {
  </style>
 
 <body>
-  <h1>石川中継タイマー</h1>
+  <h1>開発用タイマー</h1>
 
   <div id="timers"></div>
 
@@ -271,10 +271,14 @@ function updateClockTime() {
   const isOwner = (!data.owner || data.owner === deviceId); // ← ownerがnull なら誰でもOK
 
     const box = container.children[i];
-    box.querySelector("button:nth-of-type(1)").disabled = !isOwner; // スタート
-    box.querySelector("button:nth-of-type(2)").disabled = !isOwner; // リセット
-    box.querySelector("button:nth-of-type(3)").disabled = !isOwner; // ＋
-    box.querySelector("button:nth-of-type(4)").disabled = !isOwner; // −
+    box.querySelector(`button[onclick="startTimer('${name}', ${i})"]`).disabled = !isOwner;
+// リセットボタン
+box.querySelector(`button[onclick="resetTimer('${name}', ${i})"]`).disabled = !isOwner;
+// ＋ボタン
+box.querySelector(`button[onclick="adjustTime('${name}', ${i}, true)"]`).disabled = !isOwner;
+// −ボタン
+box.querySelector(`button[onclick="adjustTime('${name}', ${i}, false)"]`).disabled = !isOwner;
+
   });
      
      setupEnterKeyToStart(i, name); // ← これを追加
