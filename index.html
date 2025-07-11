@@ -347,14 +347,12 @@ document.getElementById(`minus${i}`).disabled = !isOwner;
     if (newDuration < 0) newDuration = 0;
 
     // running中なら startTime も更新して残り時間を維持
-    c
+    
 
     set(timerRef, {
-      startTime: now,
-      duration: newDuration,
+      time: newTime,
       running: true,
-      owner: data.owner || deviceId,
-      updatedAt: now
+      owner: data.owner || deviceId
     });
   }, { onlyOnce: true });
 };
