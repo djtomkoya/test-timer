@@ -338,13 +338,16 @@ document.getElementById(`minus${i}`).disabled = !isOwner;
       return;
     }
 
+    const now = Date.now() + timeOffset;
+    const elapsed = Math.floor((now - data.startTime) / 1000);
+
     let newDuration = isAdd
       ? data.duration + adjustSeconds
       : data.duration - adjustSeconds;
     if (newDuration < 0) newDuration = 0;
 
     // running中なら startTime も更新して残り時間を維持
-    const now = Date.now() + timeOffset;
+    c
 
     set(timerRef, {
       startTime: now,
