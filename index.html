@@ -179,7 +179,7 @@ if (!deviceId) {
   let timeOffset = 0;
   const intervals = {};
 
-   // ❶ サーバーとの時刻差分を取得
+   // firebase サーバーとの時刻差分を取得
 function syncServerTimeOffset() {
   const offsetRef = ref(db, ".info/serverTimeOffset");
   onValue(offsetRef, (snapshot) => {
@@ -305,35 +305,22 @@ document.getElementById(`minus${i}`).disabled = !isOwner;
 
   const timerRef = ref(db, "sharedTimers/" + name);
   clearInterval(intervals[name]); // 古いインターバルを停止
+  const now = Date.now() + timeOffset;
 
-  set(timerRef, { time: totalSeconds, running: true, owner: deviceId });
+ set(timerRef, {
+    startTime: now,
+    duration: totalSeconds,
+    running: true,
+    owner: deviceId,
+    updatedAt: now
+  });
+
+  localStorage.setItem("start_" + name, now); // オフライン復元用（任意）
+};
 
 
   
-  // 1秒ごとに、Firebaseの最新値を取得して1減らして保存
-  intervals[name] = setInterval(() => {
-    onValue(timerRef, (snapshot) => {
-      const data = snapshot.val();
-      if (!data || !data.running) {
-        clearInterval(intervals[name]);
-        return;
-      }
-
-      let newTime = data.time - 1;
-      if (newTime < 0) {
-        clearInterval(intervals[name]);
-        newTime = 0;
-      }
-
-      set(timerRef, {
-  time: newTime,
-  running: newTime > 0,
-  owner: newTime === 0 ? null : data.owner  // 0秒になったらownerを消す
-});
-
-    }, { onlyOnce: true });  // 毎秒1回だけ値を読む
-  }, 1000);
-};
+  
 
 
    window.adjustTime = function (name, i, isAdd) {
@@ -353,6 +340,9 @@ document.getElementById(`minus${i}`).disabled = !isOwner;
 
     let newTime = isAdd ? data.time + adjustSeconds : data.time - adjustSeconds;
     if (newTime < 0) newTime = 0;
+
+    // running中なら startTime も更新して残り時間を維持
+    const now = Date.now() + timeOffset;
 
     set(timerRef, {
       time: newTime,
@@ -394,7 +384,7 @@ function setupEnterKeyToStart(i, name) {
 }
 
    window.resetTimer = function (name, i) {
- clearInterval(intervals[name]);
+
 
  // 入力欄をすべて空にする
  document.getElementById("h" + i).value = "";
@@ -404,8 +394,14 @@ function setupEnterKeyToStart(i, name) {
 
  // タイマーを0秒で止める
  const timerRef = ref(db, "sharedTimers/" + name);
- set(timerRef, { time: 0, running: false });
+ set(timerRef, {
+    duration: 0,
+    running: false,
+    updatedAt: Date.now(),
+    owner: null
+  });
 };
+
 
 document.getElementById("scrollTopBtn").onclick = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -432,6 +428,28 @@ document.getElementById("forceReleaseBtn").addEventListener("click", () => {
 
   alert("全タイマーのオーナーを解除しました。");
 });
+
+function updateDisplayLoop() {
+  timerKeys.forEach((name, i) => {
+    const timerRef = ref(db, "sharedTimers/" + name);
+    onValue(timerRef, (snapshot) => {
+      const data = snapshot.val();
+      if (!data || !data.running) {
+        document.getElementById("display" + i).innerText = "0:00:00";
+        return;
+      }
+
+      const now = Date.now() + timeOffset;
+      const elapsed = Math.floor((now - data.startTime) / 1000);
+      const remaining = Math.max(0, data.duration - elapsed);
+
+      document.getElementById("display" + i).innerText = formatTime(remaining);
+    }, { onlyOnce: true });
+  });
+
+  requestAnimationFrame(updateDisplayLoop);
+}
+requestAnimationFrame(updateDisplayLoop);
 
 
 </script>
