@@ -308,19 +308,17 @@ document.getElementById(`minus${i}`).disabled = !isOwner;
   const now = Date.now() + timeOffset;
 
  set(timerRef, {
-    startTime: now,
-    duration: totalSeconds,
-    running: true,
-    owner: deviceId,
-    updatedAt: now
-  });
+  startTime: Date.now() + timeOffset,
+  duration: totalSeconds,
+  running: true,
+  owner: deviceId,
+  updatedAt: Date.now() + timeOffset
+});
 
   localStorage.setItem("start_" + name, now); // オフライン復元用（任意）
 };
 
 
-  
-  
 
 
    window.adjustTime = function (name, i, isAdd) {
