@@ -338,16 +338,20 @@ document.getElementById(`minus${i}`).disabled = !isOwner;
       return;
     }
 
-    let newTime = isAdd ? data.time + adjustSeconds : data.time - adjustSeconds;
-    if (newTime < 0) newTime = 0;
+    let newDuration = isAdd
+      ? data.duration + adjustSeconds
+      : data.duration - adjustSeconds;
+    if (newDuration < 0) newDuration = 0;
 
     // running中なら startTime も更新して残り時間を維持
     const now = Date.now() + timeOffset;
 
     set(timerRef, {
-      time: newTime,
+      startTime: now,
+      duration: newDuration,
       running: true,
-      owner: data.owner || deviceId
+      owner: data.owner || deviceId,
+      updatedAt: now
     });
   }, { onlyOnce: true });
 };
