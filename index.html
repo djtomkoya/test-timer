@@ -166,7 +166,7 @@ if (!deviceId) {
 }
   
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+  import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
  
     
   const firebaseConfig = window.firebaseConfig;  
@@ -321,12 +321,13 @@ document.getElementById(`minus${i}`).disabled = !isOwner;
 
 
 
-   window.adjustTime = function (name, i, isAdd) {
+  window.adjustTime = async function (name, i, isAdd) {
   const adjustInput = document.getElementById(`adjust${i}`);
   const adjustSeconds = parseInt(adjustInput.value) || 0;
   const timerRef = ref(db, "sharedTimers/" + name);
 
-  onValue(timerRef, (snapshot) => {
+  try {
+    const snapshot = await get(timerRef);
     const data = snapshot.val();
     if (!data) return;
 
@@ -338,28 +339,28 @@ document.getElementById(`minus${i}`).disabled = !isOwner;
 
     const now = Date.now() + timeOffset;
     const elapsed = Math.floor((now - data.startTime) / 1000);
-
     let currentRemaining = data.duration - elapsed;
     if (currentRemaining < 0) currentRemaining = 0;
 
-    // ★ ここが重要：現在の残り時間を基準に新しい duration を設定
     let newRemaining = isAdd
       ? currentRemaining + adjustSeconds
       : currentRemaining - adjustSeconds;
 
     if (newRemaining < 0) newRemaining = 0;
 
-    const newDuration = newRemaining;
     const newStartTime = now;
+    const newDuration = newRemaining;
 
-    set(timerRef, {
+    await set(timerRef, {
       startTime: newStartTime,
       duration: newDuration,
       running: newRemaining > 0,
       owner: newRemaining === 0 ? null : (data.owner || deviceId),
       updatedAt: now
     });
-  }, { onlyOnce: true });
+  } catch (error) {
+    console.error("adjustTime failed:", error);
+  }
 };
 
 
