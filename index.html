@@ -157,30 +157,29 @@ button:hover {
 <script src="firebase-config.js"></script>
   
   <script type="module">
-
-//オーナー処理をFirebaseに保存
-let deviceId = localStorage.getItem("deviceId");
-if (!deviceId) {
-  deviceId = crypto.randomUUID();
-  localStorage.setItem("deviceId", deviceId);
-}
-  
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
- 
-    
-  const firebaseConfig = window.firebaseConfig;  
- 
+  import {
+    getDatabase,
+    ref,
+    set,
+    get,
+    onValue,
+    update
+  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
 
-  // Initialize Firebase
+  const firebaseConfig = window.firebaseConfig;
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  let timeOffset = 0;
-  const intervals = {};
+  // デバイス識別
+  let deviceId = localStorage.getItem("deviceId");
+  if (!deviceId) {
+    deviceId = crypto.randomUUID();
+    localStorage.setItem("deviceId", deviceId);
+  }
 
-   // firebase サーバーとの時刻差分を取得
-function syncServerTimeOffset() {
+  // サーバー時間との補正
+  let timeOffset = 0;
   const offsetRef = ref(db, ".info/serverTimeOffset");
   onValue(offsetRef, (snapshot) => {
     if (snapshot.exists()) {
@@ -188,258 +187,68 @@ function syncServerTimeOffset() {
       console.log("時刻補正: ", timeOffset, "ms");
     }
   });
-}
-syncServerTimeOffset(); // 初期化後に呼び出す
 
-// ❷ 時計更新（差分補正あり）
-function updateClockTime() {
-  const correctedNow = new Date(Date.now() + timeOffset);
-  const hh = String(correctedNow.getHours()).padStart(2, '0');
-  const mm = String(correctedNow.getMinutes()).padStart(2, '0');
-  const ss = String(correctedNow.getSeconds()).padStart(2, '0');
-  const timeStr = `${hh}:${mm}:${ss}`;
-  document.querySelectorAll(".clock-time").forEach(el => {
-    el.innerText = timeStr;
-  });
-
-  requestAnimationFrame(updateClockTime); // ←次のフレームで再実行
-}
-　 
+  // 時計表示
+  function updateClockTime() {
+    const correctedNow = new Date(Date.now() + timeOffset);
+    const hh = String(correctedNow.getHours()).padStart(2, '0');
+    const mm = String(correctedNow.getMinutes()).padStart(2, '0');
+    const ss = String(correctedNow.getSeconds()).padStart(2, '0');
+    const timeStr = `${hh}:${mm}:${ss}`;
+    document.querySelectorAll(".clock-time").forEach(el => {
+      el.innerText = timeStr;
+    });
+    requestAnimationFrame(updateClockTime);
+  }
   requestAnimationFrame(updateClockTime);
 
-   const timerLabels = [
-     "商品時間",
-     "①コメントポーズ",
-     "②コメントポーズ",
-     "③コメントポーズ",
-     "リキャップまで",
-     "APCまで",
-     "次セグスタートまで",
-     "エンディングまで",  // ←追加
- 　　 "汎用タイマー"  // ←追加
-   ];
+  // タイマー定義
+  const timerLabels = [
+    "商品時間", "①コメントポーズ", "②コメントポーズ", "③コメントポーズ",
+    "リキャップまで", "APCまで", "次セグスタートまで", "エンディングまで", "汎用タイマー"
+  ];
+  const timerKeys = [
+    "timer1", "timer2", "timer3", "timer4",
+    "timer5", "timer6", "timer7", "timer8", "timer9"
+  ];
 
-   const timerKeys = [
-     "timer1", "timer2", "timer3", "timer4", "timer5", "timer6", "timer7","timer8","timer9"
-   ];
+  // HTML構築とFirebase監視
+  const container = document.getElementById("timers");
 
-   const container = document.getElementById("timers");
+  timerLabels.forEach((label, i) => {
+    const name = timerKeys[i];
+    const isClass = label.includes("APC") ? "apc-title" :
+                    label.includes("商品時間") ? "shohin-title" :
+                    label.includes("リキャップ") ? "recap-title" :
+                    label.includes("コメントポーズ") ? "comment-title" :
+                    label.includes("次セグスタート") ? "nextseg-title" :
+                    label.includes("エンディング") ? "Ending-title" :
+                    label.includes("汎用") ? "Hanyou-title" : "";
 
-   timerLabels.forEach((label, i) => {
-     const name = timerKeys[i];
-     const isAPC = label.includes("APC");
-     const isShohin = label.includes("商品時間");
-     const isRecap = label.includes("リキャップ");
-     const isComment = label.includes("コメントポーズ");
-     const isNextSeg = label.includes("次セグスタート");
-      const isEnding = label.includes("エンディング");
-       const isHanyou= label.includes("汎用");
+    const box = document.createElement("div");
+    box.className = "timer-box";
+    box.innerHTML = `
+      <h2 class="${isClass}" ${label.includes("リキャップ") ? 'id="recapTimer"' : ''}>${label}</h2>
+      <div class="clock-time">--:--:--</div>
+      <div id="display${i}" class="display-time">0:00:00</div>
+      <input type="number" id="quick${i}" placeholder="例: 15415" onchange="convertQuick(${i})"> ←まとめて入力<br/>
+      <input type="number" id="h${i}" min="0" value="0"> h
+      <input type="number" id="m${i}" min="0" max="59" value="0"> m
+      <input type="number" id="s${i}" min="0" max="59" value="0"> s <br/>
+      <button id="start${i}" onclick="startTimer('${name}', ${i})">スタート</button>
+      <button id="reset${i}" onclick="resetTimer('${name}', ${i})">リセット</button>
+      <input type="number" id="adjust${i}" value="15" style="width: 80px; font-size: 24px;"> 秒
+      <button id="plus${i}" class="adjust-buttons adjust-plus" onclick="adjustTime('${name}', ${i}, true)">＋</button>
+      <button id="minus${i}" class="adjust-buttons adjust-minus" onclick="adjustTime('${name}', ${i}, false)">−</button>
+    `;
+    container.appendChild(box);
 
-
-     const box = document.createElement("div");
-     box.className = "timer-box";
-     box.innerHTML = `
-     <h2 class="${isAPC ? 'apc-title' : isShohin ? 'shohin-title' : isRecap ? 'recap-title' : isComment ? 'comment-title' : isNextSeg ? 'nextseg-title' : isEnding ? 'Ending-title' : isHanyou ? 'Hanyou-title' : ''}"${isRecap ? 'id="recapTimer"' : ''}>${label}</h2>
-
-     <div class="clock-time">--:--:--</div> <!-- ★追加 -->
-
-       <div id="display${i}" class="display-time">--:--:--</div>
-       <input type="number" id="quick${i}" placeholder="例: 15415" onchange="convertQuick(${i})"> ←まとめて入力<br/>
-       <input type="number" id="h${i}" min="0" value="0"> h
-       <input type="number" id="m${i}" min="0" max="59" value="0"> m
-       <input type="number" id="s${i}" min="0" max="59" value="0"> s <br/>
-       
-       <button id="start${i}" onclick="startTimer('${name}', ${i})">スタート</button>
-  <button id="reset${i}" onclick="resetTimer('${name}', ${i})">リセット</button>
-
-  <input type="number" id="adjust${i}" value="15" style="width: 80px; font-size: 24px;"> 秒
-  <button id="plus${i}" class="adjust-buttons adjust-plus" onclick="adjustTime('${name}', ${i}, true)">＋</button>
-  <button id="minus${i}" class="adjust-buttons adjust-minus" onclick="adjustTime('${name}', ${i}, false)">−</button>
-
-
-     `;
-     container.appendChild(box);
-
-     const timerRef = ref(db, "sharedTimers/" + name);
-     // ★ここに追加！ボタンの有効/無効を制御するonValue
-  onValue(timerRef, (snapshot) => {
-    const data = snapshot.val();
-
-    console.log("onValue発火", name, data);  // ← ここ！
-
-    if (!data) return;
-
-         document.getElementById("display" + i).innerText = formatTime(data.time);
-         // 自分がオーナーか判定してボタン制御
-  const isOwner = (!data.owner || data.owner === deviceId); // ← ownerがnull なら誰でもOK
-
-    const box = container.children[i];
-
-// 明示的なセレクタに修正（再掲）
-document.getElementById(`start${i}`).disabled = !isOwner;
-document.getElementById(`reset${i}`).disabled = !isOwner;
-document.getElementById(`plus${i}`).disabled = !isOwner;
-document.getElementById(`minus${i}`).disabled = !isOwner;
-
-
-  });
-     
-     setupEnterKeyToStart(i, name); // ← これを追加
-
-   });
-
-  function formatTime(seconds) {
-  if (isNaN(seconds)) return "0:00:00";
-
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
-
-
-window.startTimer = function (name, i) {
-  const h = parseInt(document.getElementById("h" + i).value) || 0;
-  const m = parseInt(document.getElementById("m" + i).value) || 0;
-  const s = parseInt(document.getElementById("s" + i).value) || 0;
-  const totalSeconds = h * 3600 + m * 60 + s;
-
-  if (totalSeconds <= 0) return;
-
-  const timerRef = ref(db, "sharedTimers/" + name);
-  const now = Date.now() + timeOffset;
-  const endTime = now + totalSeconds * 1000;
-
-  set(timerRef, {
-    endTime,
-    running: true,
-    owner: deviceId,
-    updatedAt: now
-  });
-};
-
-
-
-
-
-  window.adjustTime = async function (name, i, isAdd) {
-  const adjustInput = document.getElementById(`adjust${i}`);
-  const adjustSeconds = parseInt(adjustInput.value) || 0;
-  const timerRef = ref(db, "sharedTimers/" + name);
-
-  try {
-    const snapshot = await get(timerRef);
-    const data = snapshot.val();
-    if (!data || typeof data.endTime !== "number") return;
-
-    const isOwner = !data.owner || data.owner === deviceId;
-    if (!isOwner) {
-      alert("この端末はオーナーではないため操作できません。");
-      return;
-    }
-
-    const delta = adjustSeconds * 1000 * (isAdd ? 1 : -1);
-    const now = Date.now() + timeOffset;
-    let newEndTime = data.endTime + delta;
-
-    // 過去になってしまうなら now にリセット
-    if (newEndTime < now) {
-      newEndTime = now;
-    }
-
-    await set(timerRef, {
-      endTime: newEndTime,
-      running: newEndTime > now,
-      owner: newEndTime > now ? (data.owner || deviceId) : null,
-      updatedAt: now
-    });
-  } catch (error) {
-    console.error("adjustTime failed:", error);
-  }
-};
-
-   window.convertQuick = function (i) {
-     const val = document.getElementById("quick" + i).value.trim();
-     if (!/^[0-9]+$/.test(val)) return;
-     const padded = val.padStart(6, "0");
-     const h = parseInt(padded.slice(0, -4)) || 0;
-     const m = parseInt(padded.slice(-4, -2)) || 0;
-     const s = parseInt(padded.slice(-2)) || 0;
-     document.getElementById("h" + i).value = h;
-     document.getElementById("m" + i).value = m;
-     document.getElementById("s" + i).value = s;
-
-   };
-
-   // 共通：Enterキーでスタート発火
-function setupEnterKeyToStart(i, name) {
-  const quick = document.getElementById(`quick${i}`);
-  const h = document.getElementById(`h${i}`);
-  const m = document.getElementById(`m${i}`);
-  const s = document.getElementById(`s${i}`);
-
-  [quick, h, m, s].forEach(input => {
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        startTimer(name, i);
-      }
-    });
-  });
-}
-
-  window.resetTimer = function (name, i) {
-  document.getElementById("h" + i).value = "";
-  document.getElementById("m" + i).value = "";
-  document.getElementById("s" + i).value = "";
-  document.getElementById("quick" + i).value = "";
-
-  const timerRef = ref(db, "sharedTimers/" + name);
-  set(timerRef, {
-    endTime: 0,
-    running: false,
-    owner: null,
-    updatedAt: Date.now() + timeOffset
-  });
-};
-
-
-
-document.getElementById("scrollTopBtn").onclick = () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-document.getElementById("scrollBottomBtn").onclick = () => {
-  const recapElement = document.getElementById("recapTimer");
-  if (recapElement) {
-    recapElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-};
-document.getElementById("forceReleaseBtn").addEventListener("click", () => {
-  const confirmReset = confirm("全タイマーのオーナーを解除しますか？");
-  if (!confirmReset) return;
-
-  timerKeys.forEach(name => {
+    // Firebase監視（常時）
     const timerRef = ref(db, "sharedTimers/" + name);
-    update(timerRef, {
-      owner: null,
-      // ★ ダミー値を追加して onValue を確実に発火させる
-      updatedAt: Date.now()  // ← これだけでOK（タイマーは止めない）
-    });
-  });
-
-  alert("全タイマーのオーナーを解除しました。");
-});
-
-function updateDisplayLoop() {
-  timerKeys.forEach((name, i) => {
-    const timerRef = ref(db, "sharedTimers/" + name);
-
-    // 🔁 常時リアルタイム監視に変更
     onValue(timerRef, (snapshot) => {
       const data = snapshot.val();
       const display = document.getElementById("display" + i);
-
-      if (!data || !data.running || typeof data.endTime !== 'number' || isNaN(data.endTime)) {
+      if (!data || !data.running || typeof data.endTime !== "number") {
         display.innerText = "0:00:00";
         return;
       }
@@ -447,12 +256,149 @@ function updateDisplayLoop() {
       const now = Date.now() + timeOffset;
       const remaining = Math.max(0, Math.floor((data.endTime - now) / 1000));
       display.innerText = formatTime(remaining);
+
+      const isOwner = !data.owner || data.owner === deviceId;
+      document.getElementById(`start${i}`).disabled = !isOwner;
+      document.getElementById(`reset${i}`).disabled = !isOwner;
+      document.getElementById(`plus${i}`).disabled = !isOwner;
+      document.getElementById(`minus${i}`).disabled = !isOwner;
     });
+
+    setupEnterKeyToStart(i, name);
   });
 
-  // ← ループ不要（onValueが常時反映するため）
-  // requestAnimationFrame(updateDisplayLoop); ← 削除
-}
+  // タイマー表示整形
+  function formatTime(seconds) {
+    if (isNaN(seconds)) return "0:00:00";
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  // タイマースタート
+  window.startTimer = function (name, i) {
+    const h = parseInt(document.getElementById("h" + i).value) || 0;
+    const m = parseInt(document.getElementById("m" + i).value) || 0;
+    const s = parseInt(document.getElementById("s" + i).value) || 0;
+    const totalSeconds = h * 3600 + m * 60 + s;
+    if (totalSeconds <= 0 || isNaN(totalSeconds)) return;
+
+    const now = Date.now() + timeOffset;
+    const endTime = now + totalSeconds * 1000;
+    const timerRef = ref(db, "sharedTimers/" + name);
+
+    set(timerRef, {
+      endTime,
+      running: true,
+      owner: deviceId,
+      updatedAt: now
+    });
+  };
+
+  // ±ボタン
+  window.adjustTime = async function (name, i, isAdd) {
+    const adjustInput = document.getElementById(`adjust${i}`);
+    const adjustSeconds = parseInt(adjustInput.value) || 0;
+    const timerRef = ref(db, "sharedTimers/" + name);
+
+    try {
+      const snapshot = await get(timerRef);
+      const data = snapshot.val();
+      if (!data || typeof data.endTime !== "number") return;
+
+      const isOwner = !data.owner || data.owner === deviceId;
+      if (!isOwner) {
+        alert("この端末はオーナーではないため操作できません。");
+        return;
+      }
+
+      const delta = adjustSeconds * 1000 * (isAdd ? 1 : -1);
+      const now = Date.now() + timeOffset;
+      let newEndTime = data.endTime + delta;
+      if (newEndTime < now) newEndTime = now;
+
+      await set(timerRef, {
+        endTime: newEndTime,
+        running: newEndTime > now,
+        owner: newEndTime > now ? (data.owner || deviceId) : null,
+        updatedAt: now
+      });
+    } catch (e) {
+      console.error("adjustTime failed", e);
+    }
+  };
+
+  // タイマーリセット
+  window.resetTimer = function (name, i) {
+    document.getElementById("h" + i).value = "";
+    document.getElementById("m" + i).value = "";
+    document.getElementById("s" + i).value = "";
+    document.getElementById("quick" + i).value = "";
+
+    const timerRef = ref(db, "sharedTimers/" + name);
+    set(timerRef, {
+      endTime: 0,
+      running: false,
+      owner: null,
+      updatedAt: Date.now() + timeOffset
+    });
+  };
+
+  // quickコード入力（例: 123015 → 12:30:15）
+  window.convertQuick = function (i) {
+    const val = document.getElementById("quick" + i).value.trim();
+    if (!/^[0-9]+$/.test(val)) return;
+    const padded = val.padStart(6, "0");
+    document.getElementById("h" + i).value = parseInt(padded.slice(0, -4)) || 0;
+    document.getElementById("m" + i).value = parseInt(padded.slice(-4, -2)) || 0;
+    document.getElementById("s" + i).value = parseInt(padded.slice(-2)) || 0;
+  };
+
+  // Enterでスタート
+  function setupEnterKeyToStart(i, name) {
+    const quick = document.getElementById(`quick${i}`);
+    const h = document.getElementById(`h${i}`);
+    const m = document.getElementById(`m${i}`);
+    const s = document.getElementById(`s${i}`);
+
+    [quick, h, m, s].forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          startTimer(name, i);
+        }
+      });
+    });
+  }
+
+  // オーナー解除
+  document.getElementById("forceReleaseBtn").addEventListener("click", () => {
+    const confirmReset = confirm("全タイマーのオーナーを解除しますか？");
+    if (!confirmReset) return;
+
+    timerKeys.forEach(name => {
+      const timerRef = ref(db, "sharedTimers/" + name);
+      update(timerRef, {
+        owner: null,
+        updatedAt: Date.now() + timeOffset
+      });
+    });
+
+    alert("全タイマーのオーナーを解除しました。");
+  });
+
+  // スクロールボタン
+  document.getElementById("scrollTopBtn").onclick = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  document.getElementById("scrollBottomBtn").onclick = () => {
+    const recapElement = document.getElementById("recapTimer");
+    if (recapElement) {
+      recapElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+</script>
+
 
 
 
