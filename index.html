@@ -429,7 +429,7 @@ function updateDisplayLoop() {
       return;
     }
 
-    const remaining = Math.max(0, Math.floor((data.endTime - now) / 1000));
+    const remaining = Math.max(0, Math.ceil((data.endTime - now) / 1000));
     display.innerText = formatTime(remaining);
   });
 
