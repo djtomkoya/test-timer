@@ -423,14 +423,16 @@ document.getElementById("forceReleaseBtn").addEventListener("click", () => {
   const confirmReset = confirm("全タイマーのオーナーを解除しますか？");
   if (!confirmReset) return;
 
-  // 初回のみ各タイマーに対して購読を1回だけ設定
-timerKeys.forEach((name, i) => {
-  const timerRef = ref(db, "sharedTimers/" + name);
-  onValue(timerRef, (snapshot) => {
+  timerKeys.forEach(name => {
+    const timerRef = ref(db, "sharedTimers/" + name);
+    onValue(timerRef, (snapshot) => {
     const data = snapshot.val();
     if (!data) return;
     window[`timerData_${name}`] = data;
   });
+});
+
+  alert("全タイマーのオーナーを解除しました。");
 });
 
 // 毎フレーム、表示だけ更新（サーバーアクセスなし）
@@ -452,6 +454,7 @@ function updateDisplayLoop() {
   requestAnimationFrame(updateDisplayLoop);
 }
 requestAnimationFrame(updateDisplayLoop);
+
 
 </script>
 
