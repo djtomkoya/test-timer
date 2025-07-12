@@ -253,9 +253,8 @@ function updateClockTime() {
   <button id="reset${i}" onclick="resetTimer('${name}', ${i})">リセット</button>
 
   <input type="number" id="adjust${i}" value="15" style="width: 80px; font-size: 24px;"> 秒
-  <button id="plus${i}" class="adjust-buttons adjust-plus" onclick="adjustTime('${name}', ${i}, true)">＋</button>
-  <button id="minus${i}" class="adjust-buttons adjust-minus" onclick="adjustTime('${name}', ${i}, false)">−</button>
-
+ <button onclick="adjustTime('${name}', ${i}, true)">＋</button>
+<button onclick="adjustTime('${name}', ${i}, false)">−</button>
 
      `;
      container.appendChild(box);
@@ -326,9 +325,10 @@ document.getElementById(`minus${i}`).disabled = !isOwner;
   const adjustSeconds = parseInt(adjustInput.value) || 0;
   const timerRef = ref(db, "sharedTimers/" + name);
 
-  onValue(timerRef, (snapshot) => {
+   onValue(timerRef, (snapshot) => {
     const data = snapshot.val();
-    if (!data) return;
+    if (!data || typeof data.startTime !== 'number' || typeof data.duration !== 'number') return;
+
 
     const isOwner = !data.owner || data.owner === deviceId;
     if (!isOwner) {
@@ -339,8 +339,9 @@ document.getElementById(`minus${i}`).disabled = !isOwner;
     const now = Date.now() + timeOffset;
     const elapsed = Math.floor((now - data.startTime) / 1000);
 
-    let currentRemaining = data.duration - elapsed;
-    if (currentRemaining < 0) currentRemaining = 0;
+    let remaining = data.duration - elapsed;
+    if (remaining < 0) remaining = 0;
+
 
     let newDuration = isAdd
       ? data.duration + adjustSeconds
@@ -349,16 +350,15 @@ document.getElementById(`minus${i}`).disabled = !isOwner;
 
     // running中なら startTime も更新して残り時間を維持
     
-    set(timerRef, {
-      startTime: now,
-      duration: newDuration,
-      running: newDuration > 0,
-      owner: newDuration === 0 ? null : (data.owner || deviceId),
-      updatedAt: now
+     set(timerRef, {
+      startTime: now,                      // ←今に更新してズレをリセット
+      duration: newRemaining,
+      running: newRemaining > 0,
+      owner: newRemaining === 0 ? null : (data.owner || deviceId),
+      updatedAt: now                      // onValue発火用
     });
   }, { onlyOnce: true });
 };
-
 
    window.convertQuick = function (i) {
      const val = document.getElementById("quick" + i).value.trim();
