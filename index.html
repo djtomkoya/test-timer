@@ -289,11 +289,14 @@ document.getElementById(`minus${i}`).disabled = !isOwner;
    });
 
   function formatTime(seconds) {
-      const h = Math.floor(seconds / 3600);
-      const m = Math.floor((seconds % 3600) / 60);
-      const s = seconds % 60;
-      return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    }
+  if (isNaN(seconds)) return "0:00:00";
+
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
 
 window.startTimer = function (name, i) {
   const h = parseInt(document.getElementById("h" + i).value) || 0;
@@ -432,19 +435,23 @@ function updateDisplayLoop() {
     const timerRef = ref(db, "sharedTimers/" + name);
     onValue(timerRef, (snapshot) => {
       const data = snapshot.val();
-      if (!data || !data.running || !data.endTime) {
-        document.getElementById("display" + i).innerText = "0:00:00";
+      const display = document.getElementById("display" + i);
+
+      // ← endTimeの存在と型チェック
+      if (!data || !data.running || typeof data.endTime !== 'number' || isNaN(data.endTime)) {
+        display.innerText = "0:00:00";
         return;
       }
 
       const now = Date.now() + timeOffset;
       const remaining = Math.max(0, Math.floor((data.endTime - now) / 1000));
-      document.getElementById("display" + i).innerText = formatTime(remaining);
+      display.innerText = formatTime(remaining);
     }, { onlyOnce: true });
   });
 
   requestAnimationFrame(updateDisplayLoop);
 }
+
 
 
 
