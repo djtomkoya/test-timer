@@ -118,7 +118,7 @@ button:hover {
 }
 
 .adjust-minus {
-  background-color: #5f9a47;  /* 緑 */
+  background-color: #6a8e5c;  /* 緑 */
   color: white;
 }
 
@@ -127,7 +127,7 @@ button:hover {
 }
 
 .adjust-minus:hover {
-  background-color: #1b7d1e;
+  background-color: #1d8b21;
 }
 
 
@@ -258,10 +258,12 @@ button:hover {
       display.innerText = formatTime(remaining);
 
       const isOwner = !data.owner || data.owner === deviceId;
+      const isRunning = data.running === true;
       document.getElementById(`start${i}`).disabled = !isOwner;
       document.getElementById(`reset${i}`).disabled = !isOwner;
-      document.getElementById(`plus${i}`).disabled = !isOwner;
-      document.getElementById(`minus${i}`).disabled = !isOwner;
+      // ➕➖ボタンは「オーナー かつ running 中」のときのみ有効
+     document.getElementById(`plus${i}`).disabled = !isOwner || !isRunning;
+     document.getElementById(`minus${i}`).disabled = !isOwner || !isRunning;
     });
 
     setupEnterKeyToStart(i, name);
@@ -312,6 +314,11 @@ button:hover {
         alert("この端末はオーナーではないため操作できません。");
         return;
       }
+      //  追加：止まっていたら無視
+       if (!data.running) {
+      console.warn("タイマーが止まっているため加算・減算できません。");
+      return;
+    }
 
       const delta = adjustSeconds * 1000 * (isAdd ? 1 : -1);
       const now = Date.now() + timeOffset;
