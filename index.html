@@ -349,9 +349,9 @@ document.getElementById(`minus${i}`).disabled = !isOwner;
 
     if (newRemaining < 0) newRemaining = 0;
 
-    // ★ startTimeを補正して、「今」から newRemaining が残るように調整
-    const newStartTime = now - (newDuration - newRemaining) * 1000;
-    
+    const newDuration = newRemaining;
+    const newStartTime = now;
+
     set(timerRef, {
       startTime: newStartTime,
       duration: newDuration,
