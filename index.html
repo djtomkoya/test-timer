@@ -349,12 +349,12 @@ document.getElementById(`minus${i}`).disabled = !isOwner;
 
     if (newRemaining < 0) newRemaining = 0;
 
-    const newDuration = newRemaining;
-    const newStartTime = now;
+    // ★ startTimeを補正して、「今」から newRemaining が残るように調整
+    const newStartTime = now - (data.duration - newRemaining) * 1000;
 
     set(timerRef, {
       startTime: newStartTime,
-      duration: newDuration,
+      duration: newRemaining,
       running: newRemaining > 0,
       owner: newRemaining === 0 ? null : (data.owner || deviceId),
       updatedAt: now
