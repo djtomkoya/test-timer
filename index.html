@@ -350,12 +350,12 @@ document.getElementById(`minus${i}`).disabled = !isOwner;
     // running中なら startTime も更新して残り時間を維持
     
     set(timerRef, {
-      startTime: now,
-      duration: newDuration,
-      running: newDuration > 0,
-      owner: newDuration === 0 ? null : (data.owner || deviceId),
-      updatedAt: now
-    });
+  startTime: data.startTime, // ← 上書きせず維持
+  duration: newDuration,
+  running: newDuration > 0,
+  owner: newDuration === 0 ? null : (data.owner || deviceId),
+  updatedAt: now
+});
   }, { onlyOnce: true });
 };
 
@@ -423,40 +423,35 @@ document.getElementById("forceReleaseBtn").addEventListener("click", () => {
   const confirmReset = confirm("全タイマーのオーナーを解除しますか？");
   if (!confirmReset) return;
 
-  timerKeys.forEach(name => {
-    const timerRef = ref(db, "sharedTimers/" + name);
-    update(timerRef, {
-      owner: null,
-      // ★ ダミー値を追加して onValue を確実に発火させる
-      updatedAt: Date.now()  // ← これだけでOK（タイマーは止めない）
-    });
+  // 初回のみ各タイマーに対して購読を1回だけ設定
+timerKeys.forEach((name, i) => {
+  const timerRef = ref(db, "sharedTimers/" + name);
+  onValue(timerRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
+    window[`timerData_${name}`] = data;
   });
-
-  alert("全タイマーのオーナーを解除しました。");
 });
 
+// 毎フレーム、表示だけ更新（サーバーアクセスなし）
 function updateDisplayLoop() {
+  const now = Date.now() + timeOffset;
+
   timerKeys.forEach((name, i) => {
-    const timerRef = ref(db, "sharedTimers/" + name);
-    onValue(timerRef, (snapshot) => {
-      const data = snapshot.val();
-      if (!data || !data.running) {
-        document.getElementById("display" + i).innerText = "0:00:00";
-        return;
-      }
+    const data = window[`timerData_${name}`];
+    if (!data || !data.running) {
+      document.getElementById("display" + i).innerText = "0:00:00";
+      return;
+    }
 
-      const now = Date.now() + timeOffset;
-      const elapsed = Math.floor((now - data.startTime) / 1000);
-      const remaining = Math.max(0, data.duration - elapsed);
-
-      document.getElementById("display" + i).innerText = formatTime(remaining);
-    }, { onlyOnce: true });
+    const elapsed = Math.floor((now - data.startTime) / 1000);
+    const remaining = Math.max(0, data.duration - elapsed);
+    document.getElementById("display" + i).innerText = formatTime(remaining);
   });
 
   requestAnimationFrame(updateDisplayLoop);
 }
 requestAnimationFrame(updateDisplayLoop);
-
 
 </script>
 
