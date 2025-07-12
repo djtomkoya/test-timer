@@ -295,28 +295,26 @@ document.getElementById(`minus${i}`).disabled = !isOwner;
       return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
 
-    window.startTimer = function (name, i) {
+window.startTimer = function (name, i) {
   const h = parseInt(document.getElementById("h" + i).value) || 0;
   const m = parseInt(document.getElementById("m" + i).value) || 0;
   const s = parseInt(document.getElementById("s" + i).value) || 0;
   const totalSeconds = h * 3600 + m * 60 + s;
 
-  if (totalSeconds <= 0) return;  // ★← 追加：0秒以下なら無視
+  if (totalSeconds <= 0) return;
 
   const timerRef = ref(db, "sharedTimers/" + name);
-  clearInterval(intervals[name]); // 古いインターバルを停止
   const now = Date.now() + timeOffset;
+  const endTime = now + totalSeconds * 1000;
 
- set(timerRef, {
-  startTime: Date.now() + timeOffset,
-  duration: totalSeconds,
-  running: true,
-  owner: deviceId,
-  updatedAt: Date.now() + timeOffset
-});
-
-  localStorage.setItem("start_" + name, now); // オフライン復元用（任意）
+  set(timerRef, {
+    endTime,
+    running: true,
+    owner: deviceId,
+    updatedAt: now
+  });
 };
+
 
 
 
@@ -329,7 +327,7 @@ document.getElementById(`minus${i}`).disabled = !isOwner;
   try {
     const snapshot = await get(timerRef);
     const data = snapshot.val();
-    if (!data) return;
+    if (!data || typeof data.endTime !== "number") return;
 
     const isOwner = !data.owner || data.owner === deviceId;
     if (!isOwner) {
@@ -337,32 +335,25 @@ document.getElementById(`minus${i}`).disabled = !isOwner;
       return;
     }
 
+    const delta = adjustSeconds * 1000 * (isAdd ? 1 : -1);
     const now = Date.now() + timeOffset;
-    const elapsed = Math.floor((now - data.startTime) / 1000);
-    let currentRemaining = data.duration - elapsed;
-    if (currentRemaining < 0) currentRemaining = 0;
+    let newEndTime = data.endTime + delta;
 
-    let newRemaining = isAdd
-      ? currentRemaining + adjustSeconds
-      : currentRemaining - adjustSeconds;
-
-    if (newRemaining < 0) newRemaining = 0;
-
-    const newStartTime = now;
-    const newDuration = newRemaining;
+    // 過去になってしまうなら now にリセット
+    if (newEndTime < now) {
+      newEndTime = now;
+    }
 
     await set(timerRef, {
-      startTime: newStartTime,
-      duration: newDuration,
-      running: newRemaining > 0,
-      owner: newRemaining === 0 ? null : (data.owner || deviceId),
+      endTime: newEndTime,
+      running: newEndTime > now,
+      owner: newEndTime > now ? (data.owner || deviceId) : null,
       updatedAt: now
     });
   } catch (error) {
     console.error("adjustTime failed:", error);
   }
 };
-
 
    window.convertQuick = function (i) {
      const val = document.getElementById("quick" + i).value.trim();
@@ -393,24 +384,21 @@ function setupEnterKeyToStart(i, name) {
   });
 }
 
-   window.resetTimer = function (name, i) {
+  window.resetTimer = function (name, i) {
+  document.getElementById("h" + i).value = "";
+  document.getElementById("m" + i).value = "";
+  document.getElementById("s" + i).value = "";
+  document.getElementById("quick" + i).value = "";
 
-
- // 入力欄をすべて空にする
- document.getElementById("h" + i).value = "";
- document.getElementById("m" + i).value = "";
- document.getElementById("s" + i).value = "";
- document.getElementById("quick" + i).value = "";
-
- // タイマーを0秒で止める
- const timerRef = ref(db, "sharedTimers/" + name);
- set(timerRef, {
-    duration: 0,
+  const timerRef = ref(db, "sharedTimers/" + name);
+  set(timerRef, {
+    endTime: 0,
     running: false,
-    updatedAt: Date.now(),
-    owner: null
+    owner: null,
+    updatedAt: Date.now() + timeOffset
   });
 };
+
 
 
 document.getElementById("scrollTopBtn").onclick = () => {
@@ -444,22 +432,20 @@ function updateDisplayLoop() {
     const timerRef = ref(db, "sharedTimers/" + name);
     onValue(timerRef, (snapshot) => {
       const data = snapshot.val();
-      if (!data || !data.running) {
+      if (!data || !data.running || !data.endTime) {
         document.getElementById("display" + i).innerText = "0:00:00";
         return;
       }
 
       const now = Date.now() + timeOffset;
-      const elapsed = Math.floor((now - data.startTime) / 1000);
-      const remaining = Math.max(0, data.duration - elapsed);
-
+      const remaining = Math.max(0, Math.floor((data.endTime - now) / 1000));
       document.getElementById("display" + i).innerText = formatTime(remaining);
     }, { onlyOnce: true });
   });
 
   requestAnimationFrame(updateDisplayLoop);
 }
-requestAnimationFrame(updateDisplayLoop);
+
 
 
 </script>
