@@ -397,8 +397,52 @@ button:hover {
       recapElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
-</script>
 
+
+// タイマー状態を保持するマップ
+const timerStates = {};
+
+// 各タイマーの Firebase データを監視して状態保存
+timerKeys.forEach((name, i) => {
+  const timerRef = ref(db, "sharedTimers/" + name);
+  onValue(timerRef, (snapshot) => {
+    const data = snapshot.val();
+    timerStates[name] = data || {};
+
+    const isOwner = !data?.owner || data.owner === deviceId;
+    document.getElementById(`start${i}`).disabled = !isOwner;
+    document.getElementById(`reset${i}`).disabled = !isOwner;
+    document.getElementById(`plus${i}`).disabled = !isOwner;
+    document.getElementById(`minus${i}`).disabled = !isOwner;
+  });
+});
+
+// 毎フレーム画面表示を更新するループ（←これが重要！）
+function updateDisplayLoop() {
+  const now = Date.now() + timeOffset;
+
+  timerKeys.forEach((name, i) => {
+    const data = timerStates[name];
+    const display = document.getElementById("display" + i);
+    if (!data || !data.running || typeof data.endTime !== 'number' || isNaN(data.endTime)) {
+      display.innerText = "0:00:00";
+      return;
+    }
+
+    const remaining = Math.max(0, Math.floor((data.endTime - now) / 1000));
+    display.innerText = formatTime(remaining);
+  });
+
+  requestAnimationFrame(updateDisplayLoop);
+}
+requestAnimationFrame(updateDisplayLoop);
+
+
+
+
+
+
+</script>
 
 <!-- ⚠ 緊急オーナー解除ボタン -->
 <button id="forceReleaseBtn" style="position:fixed; bottom:10px; left:10px; font-size:20px; z-index:2000;
