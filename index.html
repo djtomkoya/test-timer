@@ -113,21 +113,21 @@ button:hover {
 }
 
 .adjust-plus {
-  background-color: #f44336;  /* 赤 */
+  background-color: #d35d54;  /* 赤 */
   color: white;
 }
 
 .adjust-minus {
-  background-color: #7de155;  /* 緑 */
+  background-color: #5f9a47;  /* 緑 */
   color: white;
 }
 
 .adjust-plus:hover {
-  background-color: #a63229;
+  background-color: #922820;
 }
 
 .adjust-minus:hover {
-  background-color: #24a429;
+  background-color: #1b7d1e;
 }
 
 
@@ -431,7 +431,22 @@ function updateDisplayLoop() {
 
     const remaining = Math.max(0, Math.ceil((data.endTime - now) / 1000));
     display.innerText = formatTime(remaining);
+
+    // 自動で owner を解除（0秒になった瞬間だけ）
+    if (remaining === 0 && data.running) {
+      const timerRef = ref(db, "sharedTimers/" + name);
+
+      update(timerRef, {
+        running: false,
+        owner: null,
+        updatedAt: Date.now() + timeOffset
   });
+
+  timerStates[name].running = false;
+      timerStates[name].owner = null;
+    }
+});
+
 
   requestAnimationFrame(updateDisplayLoop);
 }
