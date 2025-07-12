@@ -433,11 +433,12 @@ document.getElementById("forceReleaseBtn").addEventListener("click", () => {
 function updateDisplayLoop() {
   timerKeys.forEach((name, i) => {
     const timerRef = ref(db, "sharedTimers/" + name);
+
+    // 🔁 常時リアルタイム監視に変更
     onValue(timerRef, (snapshot) => {
       const data = snapshot.val();
       const display = document.getElementById("display" + i);
 
-      // ← endTimeの存在と型チェック
       if (!data || !data.running || typeof data.endTime !== 'number' || isNaN(data.endTime)) {
         display.innerText = "0:00:00";
         return;
@@ -446,10 +447,11 @@ function updateDisplayLoop() {
       const now = Date.now() + timeOffset;
       const remaining = Math.max(0, Math.floor((data.endTime - now) / 1000));
       display.innerText = formatTime(remaining);
-    }, { onlyOnce: true });
+    });
   });
 
-  requestAnimationFrame(updateDisplayLoop);
+  // ← ループ不要（onValueが常時反映するため）
+  // requestAnimationFrame(updateDisplayLoop); ← 削除
 }
 
 
