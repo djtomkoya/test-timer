@@ -120,12 +120,12 @@ button:hover {
 
 
 #scrollMenu {
-  bottom: 40px;
-  position: fixed;
-  right: 30px;
-  padding: 15px;
-  border: none;
-  border-radius: 10px;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column; /* 縦並び */
+  gap: 10px;
+  z-index: 2000;
 }
 #scrollMenu button {
   font-size: 18px;
@@ -150,10 +150,10 @@ button:hover {
   <button onclick="scrollToSection(1)">① P</button>
   <button onclick="scrollToSection(2)">② P</button>
   <button onclick="scrollToSection(3)">③ P</button>
-  <button onclick="scrollToSection(4)">リキャップ</button>
+  <button onclick="scrollToSection(4)">Recap</button>
   <button onclick="scrollToSection(5)">APC</button>
   <button onclick="scrollToSection(6)">次セグ</button>
-  <button onclick="scrollToSection(7)">エンディング</button>
+  <button onclick="scrollToSection(7)">ｴﾝﾃﾞｨﾝｸﾞ</button>
   <button onclick="scrollToSection(8)">汎用</button>
 </div>
 
