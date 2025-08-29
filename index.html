@@ -119,8 +119,6 @@ button:hover {
 }
 
 
-
- 
 #scrollMenu {
   bottom: 40px;
   position: fixed;
@@ -166,8 +164,6 @@ button:hover {
   <div id="timers"></div>
 
 
- <button id="scrollTopBtn">↑ 商品</button>
- <button id="scrollBottomBtn">↓ Recap</button>
  
 <script src="firebase-config.js"></script>
   
@@ -417,10 +413,10 @@ button:hover {
     el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 };
-  document.getElementById("scrollTopBtn").onclick = () => {
+  document.getElementById("scrollMenu").onclick = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  document.getElementById("scrollBottomBtn").onclick = () => {
+  document.getElementById("scrollMenu").onclick = () => {
     const recapElement = document.getElementById("recapTimer");
     if (recapElement) {
       recapElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
