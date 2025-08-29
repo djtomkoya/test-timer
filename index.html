@@ -123,6 +123,8 @@ button:hover {
   position:fixed;
   bottom: 20px;
   right: 20px;
+  max-height: 80vh;    /* 縦に収まりきらなければスクロール */
+  overflow-y: auto;
   display: flex;
   flex-direction: column; /* 縦並び */
   gap: 10px;
@@ -133,7 +135,7 @@ button:hover {
   padding: 8px 12px;
   border: none;
   border-radius: 8px;
-  background-color:  #94b395;
+  background-color:  #bdbcbb;
   color: white;
   font-weight: bold;
   cursor: pointer;
@@ -141,6 +143,15 @@ button:hover {
 }
 #scrollMenu button:hover {
   background-color: #333;
+}
+/* APCボタンだけ背景色を変更 */
+#apc-button {
+  background: #f08686;   /* 好きな色に変更 */
+  color: white;
+}
+
+#apc-button:hover {
+  background: #cc4444;   /* ホバー時の色 */
 }
 
  </style>
@@ -152,7 +163,7 @@ button:hover {
   <button onclick="scrollToSection(2)">② P</button>
   <button onclick="scrollToSection(3)">③ P</button>
   <button onclick="scrollToSection(4)">Recap</button>
-  <button onclick="scrollToSection(5)">APC</button>
+  <button onclick="scrollToSection(5)"><button id="apc-button">APC</button>
   <button onclick="scrollToSection(6)">次セグ</button>
   <button onclick="scrollToSection(7)">ｴﾝﾃﾞｨﾝｸﾞ</button>
   <button onclick="scrollToSection(8)">汎用</button>
