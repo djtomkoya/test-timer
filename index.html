@@ -117,7 +117,14 @@ button:hover {
 .adjust-minus:hover {
   background-color: #1d8b21;
 }
+#shohin-title {
+  background: #b0e1e7 !important;   /* 好きな色に変更 */
+  color: white;
+}
 
+#shohin-title:hover {
+  background: #607596 !important;   /* ホバー時の色 */
+}
 /* APCボタンだけ背景色を変更 */
 #apc-button {
   background: #f4a6a6 !important;   /* 好きな色に変更 */
@@ -157,7 +164,7 @@ button:hover {
 
  <!-- スクロールメニュー -->
 <div id="scrollMenu">
-  <button onclick="scrollToSection(0)">商品</button>
+  <button id="shohin-title" onclick="scrollToSection(0)">商品</button>
   <button onclick="scrollToSection(1)">①ﾎﾟｰｽﾞ</button>
   <button onclick="scrollToSection(2)">②ﾎﾟｰｽﾞ</button>
   <button onclick="scrollToSection(3)">③ﾎﾟｰｽﾞ</button>
