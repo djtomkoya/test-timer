@@ -230,6 +230,9 @@ async function doLogin() {
   try {
     await signInWithEmailAndPassword(auth, SHARED_EMAIL, pw);
   } catch (e) {
+  if (e.code === "auth/too-many-requests") {
+    msg.innerText = "試行回数が多すぎます。しばらく待ってください";
+  } else {
     msg.innerText = "パスワードが違います";
   }
 }
