@@ -9,10 +9,14 @@
    .timer-box {
      border: 1px solid #ccc; margin: 20px auto; padding: 10px; width: 1000px; border-radius: 10px;
    }
+
+  body { opacity: 0; transition: opacity 0.15s; }
+　 body.ready { opacity: 1; }
    h2 { margin-bottom: 10px; }
    input, button { font-size: 30px; margin: 5px; padding: 5px 10px; }
    input[type="number"] { width: 150px; text-align: right; }
- .display-time {
+
+  .display-time {
      font-size: 210px;
      font-weight: bold;
      color: #ff0000;
@@ -244,14 +248,18 @@ document.getElementById("loginPw").addEventListener("keydown", (e) => {
 
 let wasLoggedOut = false;
 onAuthStateChanged(auth, (user) => {
+  document.body.classList.add("ready"); // 確認が終わったら表示
   if (user) {
     loginBox.style.display = "none";
-    if (wasLoggedOut) location.reload(); // ログイン直後だけ再読み込み
+    if (wasLoggedOut) location.reload();
   } else {
     wasLoggedOut = true;
     loginBox.style.display = "flex";
   }
 });
+
+// 保険: 3秒たっても表示されなければ強制表示
+setTimeout(() => document.body.classList.add("ready"), 3000);
 
   // デバイス識別
   let deviceId = localStorage.getItem("deviceId");
